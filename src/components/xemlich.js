@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // Thêm AnimatePresence
 import LichTrinhChiTiet from "./LichTrinhChiTiet";
 
 export default function XemLich() {
@@ -57,12 +57,36 @@ export default function XemLich() {
   const isSameDay = (d1, d2) => d1.toLocaleDateString() === d2.toLocaleDateString();
   const dotColors = ["bg-cyan-300", "bg-indigo-400", "bg-teal-400", "bg-emerald-400"];
 
+  // ✅ Định nghĩa biến thể Animation (Variants)
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1, // Mỗi phần tử con hiện lên cách nhau 0.1s
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { type: "spring", stiffness: 300, damping: 25 }
+    }
+  };
+
   return (
-    // Bỏ min-h-screen để các phần sát lại nhau theo chiều dọc
-    <div className="flex flex-col bg-white font-sans w-full max-w-md mx-auto relative overflow-visible h-auto">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="flex flex-col bg-white font-sans w-full max-w-md mx-auto relative overflow-visible h-auto"
+    >
       
       {/* 1. THANH LỊCH NGANG */}
-      <div className="mx-[-10] mt-4 bg-gray-50 rounded-[20px] p-1.5 flex items-center justify-between border border-gray-100 shadow-sm relative z-20">
+      <motion.div variants={itemVariants} className="mx-[-10] mt-4 bg-gray-50 rounded-[20px] p-1.5 flex items-center justify-between border border-gray-100 shadow-sm relative z-20">
         <button onClick={() => setCurrentWeekAnchor(new Date(currentWeekAnchor.setDate(currentWeekAnchor.getDate() - 7)))} className="w-8 h-10 flex items-center justify-center text-gray-400 z-30 relative active:scale-75 transition-transform">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
         </button>
@@ -121,29 +145,29 @@ export default function XemLich() {
         <button onClick={() => setCurrentWeekAnchor(new Date(currentWeekAnchor.setDate(currentWeekAnchor.getDate() + 7)))} className="w-8 h-10 flex items-center justify-center text-gray-400 z-30 relative active:scale-75 transition-transform">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
         </button>
-      </div>
+      </motion.div>
 
       {/* 2. DÒNG NGÀY THÁNG */}
-      <div className="w-full text-center py-2">
+      <motion.div variants={itemVariants} className="w-full text-center py-2">
         <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
           {selectedDate.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
         </h2>
-      </div>
+      </motion.div>
 
-      {/* 3. KHUNG NỘI DUNG CHÍNH (CỐ ĐỊNH ĐỘ CAO) */}
-<div className="mx-[-10] h-[420px] overflow-y-auto bg-gray-50/50 rounded-[26px] shadow-inner border border-gray-100 no-scrollbar relative mb-2">
-  {loading ? (
-    <div className="flex flex-col items-center justify-center h-full gap-3">
-      <span className="text-3xl animate-pulse">📅</span>
-      <div className="text-[15px] font-black text-blue-600 uppercase tracking-[0.2em] animate-pulse">Đang đồng bộ dữ liệu</div>
-    </div>
-  ) : (
-    <LichTrinhChiTiet data={getRentalsForDate(selectedDate)} />
-  )}
-</div>
+      {/* 3. KHUNG NỘI DUNG CHÍNH */}
+      <motion.div variants={itemVariants} className="mx-[-10] h-[420px] overflow-y-auto bg-gray-50/50 rounded-[26px] shadow-inner border border-gray-100 no-scrollbar relative mb-2">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <span className="text-3xl animate-pulse">📅</span>
+            <div className="text-[15px] font-black text-blue-600 uppercase tracking-[0.2em] animate-pulse">Đang đồng bộ dữ liệu</div>
+          </div>
+        ) : (
+          <LichTrinhChiTiet data={getRentalsForDate(selectedDate)} />
+        )}
+      </motion.div>
 
-      {/* 4. FOOTER (SÁT LỀ DƯỚI) */}
-      <div className="flex items-center justify-center py-1 gap-3">
+      {/* 4. FOOTER */}
+      <motion.div variants={itemVariants} className="flex items-center justify-center py-1 gap-3">
         <button 
           onClick={() => { const t = new Date(); setCurrentWeekAnchor(t); setSelectedDate(t); }}
           className="px-10 py-3 bg-white border border-gray-100 text-blue-600 text-[11px] font-black uppercase tracking-[0.3em] rounded-full shadow-md active:scale-95 transition-all"
@@ -166,12 +190,12 @@ export default function XemLich() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
-      </div>
+      </motion.div>
 
       <style jsx>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-    </div>
+    </motion.div>
   );
 }
