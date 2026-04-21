@@ -5,6 +5,12 @@ export default function XemLich() {
   const [currentWeekAnchor, setCurrentWeekAnchor] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  // ==========================================
+  // THÔNG SỐ VÀNG ĐỂ Ô TRẮNG ÔM HẾT 4 CHẤM
+  const oRong = "35px"; 
+  const oCao = "50px";  // Tăng lên 52px để phủ hoàn toàn phần dưới
+  // ==========================================
+
   const daysInWeek = useMemo(() => {
     const startOfWeek = new Date(currentWeekAnchor);
     const day = startOfWeek.getDay();
@@ -42,51 +48,58 @@ export default function XemLich() {
     d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
 
   return (
-    /* pt-0: Triệt tiêu padding top của container tổng */
     <div className="flex flex-col bg-white font-sans animate-fade-in overflow-visible pt-0 relative z-0">
       
-      {/* KHỐI LỊCH CHÍNH: 
-          - mt-0: Xóa bỏ margin top để sát lề trên.
-          - p-1: Giảm padding để khối gọn hơn.
-      */}
+      {/* THANH LỊCH NGANG */}
       <div className="mx-0 mt-0 bg-gray-100/80 rounded-2xl p-1 flex items-center justify-between relative z-20 overflow-visible border border-gray-200/40">
         
         {/* Nút lùi */}
-        <button 
-          onClick={goPrevWeek} 
-          className="flex items-center justify-center w-7 h-9 text-gray-500 hover:text-blue-600 transition-all active:scale-75 bg-white/50 hover:bg-white rounded-xl shadow-sm border border-white"
-        >
+        <button onClick={goPrevWeek} className="flex items-center justify-center w-7 h-9 text-gray-500 hover:text-blue-600 transition-all active:scale-75 bg-white/50 hover:bg-white rounded-xl shadow-sm border border-white">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
-        {/* Hàng 7 ngày: h-11 giúp thu hẹp chiều cao tổng thể */}
-        <div className="flex flex-1 justify-between gap-1 px-1 items-center h-11 relative overflow-visible">
+        {/* Dãy 7 ngày */}
+        <div className="flex flex-1 justify-center gap-0.5 px-1 items-center h-12 relative overflow-visible">
           {daysInWeek.map((dateItem, idx) => {
             const active = isSameDay(dateItem, selectedDate);
             return (
               <button 
                 key={idx}
                 onClick={() => setSelectedDate(dateItem)}
-                className={`flex flex-col items-center justify-center flex-1 h-10 rounded-xl relative transition-all duration-500 ease-in-out pb-2.5 ${
-                    active 
-                    ? "bg-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] -translate-y-1 scale-105 z-50" 
-                    : "bg-transparent hover:bg-white/40 z-10 opacity-100"
-                  }`}
+                className="flex flex-col items-center justify-center flex-1 min-w-0 max-w-[42px] h-full relative outline-none"
               >
-                <span className={`text-[13px] font-[900] leading-none ${active ? "text-blue-600" : "text-gray-900"}`}>
-                  {dateItem.getDate()}
-                </span>
-                <span className={`text-[7px] mt-0.5 font-bold uppercase tracking-tighter ${active ? "text-blue-500" : "text-gray-500"}`}>
-                  {getVNDayName(dateItem)}
-                </span>
+                {/* HÌNH CHỮ NHẬT TRẮNG (BACKGROUND ACTIVE) */}
+                <div 
+                  className={`absolute left-1/2 -translate-x-1/2 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.1)] rounded-xl transition-all duration-500 z-0
+                  ${active 
+                    ? "opacity-100 scale-105 -translate-y-[-0.5px]" 
+                    : "opacity-0 scale-75 translate-y-0 pointer-events-none"}`}
+                  style={{ 
+                    width: oRong, 
+                    height: oCao,
+                    bottom: '0',
+                    transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+                  }}
+                />
 
-                <div className="absolute bottom-1 grid grid-cols-2 gap-[2px]">
-                  <div className={`rounded-full bg-blue-400 transition-all duration-500 ${active ? 'w-[4px] h-[4px] opacity-100' : 'w-[2px] h-[2px] opacity-30'}`}></div>
-                  <div className={`rounded-full bg-indigo-400 transition-all duration-500 ${active ? 'w-[4px] h-[4px] opacity-100' : 'w-[2px] h-[2px] opacity-30'}`}></div>
-                  <div className={`rounded-full bg-teal-400 transition-all duration-500 ${active ? 'w-[4px] h-[4px] opacity-100' : 'w-[2px] h-[2px] opacity-30'}`}></div>
-                  <div className={`rounded-full bg-amber-400 transition-all duration-500 ${active ? 'w-[4px] h-[4px] opacity-100' : 'w-[2px] h-[2px] opacity-30'}`}></div>
+                {/* NỘI DUNG CHỮ & DẤU CHẤM */}
+                <div className="relative z-10 flex flex-col items-center pb-3">
+                  <span className={`text-[12px] font-[800] leading-none transition-colors duration-300 ${active ? "text-blue-600" : "text-gray-900"}`}>
+                    {dateItem.getDate()}
+                  </span>
+                  <span className={`text-[7px] mt-1 font-bold uppercase tracking-tighter transition-colors duration-300 ${active ? "text-blue-500" : "text-gray-500"}`}>
+                    {getVNDayName(dateItem)}
+                  </span>
+
+                  {/* 4 DẤU CHẤM: Đẩy lên cao và nằm trọn trong ô trắng */}
+                  <div className="absolute -bottom-0 grid grid-cols-2 gap-[2.5px]">
+                    <div className={`rounded-full bg-blue-400 transition-all duration-500 ${active ? 'w-[3.5px] h-[3.5px] opacity-100' : 'w-[3.5px] h-[3.5px] opacity-30'}`}></div>
+                    <div className={`rounded-full bg-indigo-400 transition-all duration-500 ${active ? 'w-[3.5px] h-[3.5px] opacity-100' : 'w-[3.5px] h-[3.5px] opacity-30'}`}></div>
+                    <div className={`rounded-full bg-teal-400 transition-all duration-500 ${active ? 'w-[3.5px] h-[3.5px] opacity-100' : 'w-[3.5px] h-[3.5px] opacity-30'}`}></div>
+                    <div className={`rounded-full bg-amber-400 transition-all duration-500 ${active ? 'w-[3.5px] h-[3.5px] opacity-100' : 'w-[3.5px] h-[3.5px] opacity-30'}`}></div>
+                  </div>
                 </div>
               </button>
             );
@@ -94,25 +107,22 @@ export default function XemLich() {
         </div>
 
         {/* Nút tới */}
-        <button 
-          onClick={goNextWeek} 
-          className="flex items-center justify-center w-7 h-9 text-gray-500 hover:text-blue-600 transition-all active:scale-75 bg-white/50 hover:bg-white rounded-xl shadow-sm border border-white"
-        >
+        <button onClick={goNextWeek} className="flex items-center justify-center w-7 h-9 text-gray-500 hover:text-blue-600 transition-all active:scale-75 bg-white/50 hover:bg-white rounded-xl shadow-sm border border-white">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
 
-      {/* DÒNG CHI TIẾT: Giảm py để kéo nội dung bên dưới lên gần hơn */}
+      {/* DÒNG CHI TIẾT NGÀY THÁNG */}
       <div className="text-center py-2 relative z-10">
         <p className="text-[9px] font-bold text-gray-400 tracking-[0.2em] uppercase">
           {selectedDate.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
         </p>
       </div>
 
-      {/* KHUNG NỘI DUNG */}
-      <div className="h-[400px] overflow-y-auto bg-gray-50/40 rounded-[2.5rem] mx-0 border border-gray-100 mb-2 shadow-inner custom-scrollbar relative z-0">
+      {/* KHUNG NỘI DUNG TRỐNG */}
+      <div className="h-[475px] overflow-y-auto bg-gray-50/40 rounded-[1rem] mx-0 border border-gray-100 mb-2 shadow-inner custom-scrollbar relative z-0">
         <div className="min-h-full flex flex-col items-center justify-center p-6 text-center">
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4 border border-gray-100">
             <span className="text-3xl opacity-20">🚗</span>

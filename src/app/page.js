@@ -10,55 +10,115 @@ export default function Home() {
   const [toasts, setToasts] = useState([]);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    tenKhach: "", sdt: "", loaiXe: "", taiXe: "",
-    ngayThue: "", gioThue: "", gia: "", ghiChu: ""
+    tenKhach: "", 
+    sdt: "", 
+    loaiXe: "", 
+    taiXe: "",
+    ngayThue: "", 
+    gioThue: "", 
+    gia: "", 
+    ghiChu: ""
   });
 
-  // Logic xử lý (Giữ nguyên)
+  // --- LOGIC XỬ LÝ TOAST (Thông báo) ---
   const addToast = (message, type = "error") => {
     const id = Date.now();
     setToasts((prev) => [{ id, message, type }, ...prev].slice(0, 3));
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
   };
 
+  // --- LOGIC XỬ LÝ FORM ---
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    if (errors[name]) setErrors({ ...errors, [name]: false });
+    // Xóa trạng thái lỗi khi người dùng bắt đầu nhập lại
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: false });
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.tenKhach || !formData.loaiXe || !formData.ngayThue) {
-      setErrors({ tenKhach: !formData.tenKhach, loaiXe: !formData.loaiXe, ngayThue: !formData.ngayThue });
-      return addToast("Bạn đã nhập thiếu thông tin!");
+    
+    // Kiểm tra các trường bắt buộc
+    const requiredFields = ["tenKhach", "loaiXe", "ngayThue"];
+    let newErrors = {};
+
+    requiredFields.forEach(field => {
+      if (!formData[field] || formData[field].trim() === "") {
+        newErrors[field] = true;
+      }
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      addToast("Bạn chưa nhập đủ thông tin", "error");
+      return;
     }
-    addToast("Lưu thành công!", "success");
-    setFormData({ tenKhach: "", sdt: "", loaiXe: "", taiXe: "", ngayThue: "", gioThue: "", gia: "", ghiChu: "" });
+
+    // Giả lập lưu thành công
+    addToast("Lưu thành công", "success");
+    
+    // Reset form (tùy chọn)
+    setFormData({
+      tenKhach: "", sdt: "", loaiXe: "", taiXe: "",
+      ngayThue: "", gioThue: "", gia: "", ghiChu: ""
+    });
   };
 
   return (
-    /* CHỈNH SỬA 1: Đổi overflow-hidden thành overflow-y-visible và thêm pt-10 
-       để có không gian cho component nhô lên không bị cấn lề màn hình */
-    <div className="min-h-screen bg-[#bac4e5] flex items-center justify-center p-4 font-sans relative overflow-y-visible pt-12">
+    <main className="min-h-screen bg-[#bac4e5] flex items-center justify-center p-4 font-sans relative overflow-hidden">
       
+      {/* Hệ thống thông báo (Căn giữa tuyệt đối) */}
       <ToastContainer toasts={toasts} />
 
       <div className="w-full max-w-md relative">
-        <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        
+        {/* THANH TAB (Navigation) 
+            -mb-[1px] để đè lên viền của card dưới, xóa vết nứt xám
+        */}
+        <div className="relative z-10 -mb-[1px]">
+          <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        </div>
 
-        {/* CHỈNH SỬA 2: Thêm overflow-visible để XemLich có thể hiển thị phần nhô cao 
-            Thay đổi p-8 thành pt-10 pb-8 để cân bằng lại khoảng cách phía trên */}
-        <div className="bg-white shadow-xl pt-10 pb-8 px-8 border border-gray-200 rounded-3xl relative z-10 overflow-visible">
+        {/* KHUNG NỘI DUNG CHÍNH (MAIN CARD) 
+            Bo góc 2.5rem cực mạnh theo phong cách hiện đại
+        */}
+        <div className="bg-white shadow-2xl p-6 sm:p-8 border border-gray-200 rounded-[2.5rem] relative z-0 transition-all duration-500 overflow-hidden">
+          
           {activeTab === "dat-lich" ? (
-            <DatLich formData={formData} handleChange={handleChange} handleSubmit={handleSubmit} errors={errors} />
+            <DatLich 
+              formData={formData} 
+              handleChange={handleChange} 
+              handleSubmit={handleSubmit} 
+              errors={errors} 
+            />
           ) : (
-            <div className="overflow-visible">
-               <XemLich />
-            </div>
+            <XemLich />
           )}
+
         </div>
       </div>
-    </div>
+
+      {/* Style CSS cho Animation (Nếu bạn không dùng globals.css) */}
+      <style jsx global>{`
+        @keyframes slideDown {
+          from { transform: translateY(-100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-down {
+          animation: slideDown 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.5s ease-out forwards;
+        }
+      `}</style>
+    </main>
   );
 }
