@@ -10,8 +10,8 @@ export default function XemLich() {
   const [loading, setLoading] = useState(true);
 
   const oRong = 38; 
-  const oCao = 58; 
-  const doDayLen = -1; 
+  const oCao = 55; 
+  const doDayLen = 0.5; 
 
   const URL_API = "https://script.google.com/macros/s/AKfycbyuH92oNRqbSdhx-EgCRccEEiS7Dedsm3h0zlmaNndIJq3NB2hReT8ZbU_KrYlYHQqm/exec";
 
