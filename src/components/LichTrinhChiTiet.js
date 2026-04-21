@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom'; // Thêm công cụ Portal của React
+import { createPortal } from 'react-dom';
 
 export default function LichTrinhChiTiet({ data }) {
     const [selectedMenuIndex, setSelectedMenuIndex] = useState(null);
-    const [isClient, setIsClient] = useState(false); // Tránh lỗi giao diện của Next.js
+    const [isClient, setIsClient] = useState(false);
 
-    // Chạy một lần khi load trang để biết web đã sẵn sàng dùng Portal
     useEffect(() => {
         setIsClient(true);
     }, []);
@@ -36,7 +35,17 @@ export default function LichTrinhChiTiet({ data }) {
             {data.map((item, index) => (
                 <div
                     key={index}
-                    className={`w-full ${defaultColors[index % 4]} rounded-2xl flex flex-col justify-center min-h-[95px] p-3 relative shadow-sm transition-all duration-150 active:scale-[0.97] cursor-pointer`}
+                    // KHÔI PHỤC HIỆU ỨNG KHỐI LỒI & ANIMATION:
+                    // 1. shadow-[inset...] tạo độ lồi 3D (sáng góc trên, tối góc dưới) + shadow-md tạo bóng đổ
+                    // 2. animate-slide-up kết hợp style delay để trượt lên tuần tự
+                    className={`w-full ${defaultColors[index % 4]} rounded-2xl flex flex-col justify-center min-h-[95px] p-3 relative 
+                                transition-all duration-150 active:scale-[0.97] cursor-pointer
+                                shadow-[inset_1px_1px_3px_rgba(255,255,255,0.4),inset_-1px_-1px_4px_rgba(0,0,0,0.15),0_4px_8px_rgba(0,0,0,0.1)]
+                                opacity-0 animate-slide-up`}
+                    style={{ 
+                        animationDelay: `${index * 0.08}s`, // Các thẻ xuất hiện lệch nhau 0.08s
+                        animationFillMode: 'forwards' 
+                    }}
                 >
                     {/* GÓC PHẢI: GIỜ, GIÁ & NÚT OPTION */}
                     <div className="absolute top-3 right-3 bottom-3 flex flex-col items-end justify-between z-20">
@@ -96,13 +105,12 @@ export default function LichTrinhChiTiet({ data }) {
                 <div 
                     className="fixed inset-0 z-[99999] flex items-center justify-center px-6 animate-fade-in"
                     style={{ 
-                        backgroundColor: 'rgba(0,0,0,0.4)', // Đen mờ vừa phải
-                        backdropFilter: 'blur(8px)',       // Làm mờ nhòe mọi thứ (kể cả tab)
-                        WebkitBackdropFilter: 'blur(8px)'  // Hỗ trợ mờ trên Safari
+                        backgroundColor: 'rgba(0,0,0,0.4)', 
+                        backdropFilter: 'blur(8px)',       
+                        WebkitBackdropFilter: 'blur(8px)'  
                     }}
                     onClick={() => setSelectedMenuIndex(null)}
                 >
-                    {/* HỘP THÔNG BÁO CHÍNH */}
                     <div 
                         className="bg-white rounded-[32px] p-6 w-full max-w-[320px] shadow-2xl animate-scale-in"
                         onClick={(e) => e.stopPropagation()}
@@ -135,8 +143,19 @@ export default function LichTrinhChiTiet({ data }) {
                         </div>
                     </div>
                 </div>,
-                document.body // Bắn trực tiếp lớp phủ ra ngoài cùng của trang web
+                document.body
             )}
+
+            {/* Thêm CSS cho hiệu ứng trượt lên (Slide Up) */}
+            <style jsx>{`
+                @keyframes slideUp {
+                    0% { opacity: 0; transform: translateY(20px); }
+                    100% { opacity: 1; transform: translateY(0); }
+                }
+                .animate-slide-up {
+                    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+            `}</style>
         </div>
     );
 }
