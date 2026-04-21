@@ -55,7 +55,7 @@ export default function XemLich() {
   }, [currentWeekAnchor]);
 
   const isSameDay = (d1, d2) => d1.toLocaleDateString() === d2.toLocaleDateString();
-  const dotColors = ["bg-cyan-300", "bg-indigo-400", "bg-teal-400", "bg-amber-400"];
+  const dotColors = ["bg-cyan-300", "bg-indigo-400", "bg-teal-400", "bg-emerald-400"];
 
   return (
     // Bỏ min-h-screen để các phần sát lại nhau theo chiều dọc
@@ -104,7 +104,7 @@ export default function XemLich() {
                       count > 4 ? <div className="h-[2.5px] w-[10px] rounded-full bg-blue-400" /> :
                       <div className="grid grid-cols-2 gap-[2px]">
                         {[...Array(4)].map((_, i) => (
-                          <div key={i} className={`w-[2.8px] h-[2.8px] rounded-full transition-all duration-500 
+                          <div key={i} className={`w-[3.5px] h-[3.5px] rounded-full transition-all duration-500 
                             ${i < count ? dotColors[i] : "bg-transparent"} 
                             ${active ? 'opacity-100' : 'opacity-50'}`} 
                           />

@@ -25,7 +25,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-
 /* Trong thẻ <style jsx> hoặc file globals.css */
 @keyframes slideDown {
   from { 
@@ -41,4 +40,3 @@ body {
 .animate-slide-down {
   animation: slideDown 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
 }
-
