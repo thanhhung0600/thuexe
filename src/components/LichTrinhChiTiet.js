@@ -103,7 +103,7 @@ export default function LichTrinhChiTiet({ data }) {
             {/* KHUNG THÔNG BÁO (MODAL) VỚI LỚP PHỦ XUYÊN THỦNG */}
             {typeof selectedMenuIndex === 'number' && isClient && createPortal(
                 <div 
-                    className="fixed inset-0 z-[99999] flex items-center justify-center px-6 animate-fade-in"
+                    className="fixed inset-0 z-[99999] flex items-center justify-center px-6 animate-scale-in"
                     style={{ 
                         backgroundColor: 'rgba(0,0,0,0.4)', 
                         backdropFilter: 'blur(8px)',       

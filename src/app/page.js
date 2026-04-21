@@ -33,7 +33,6 @@ export default function Home() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    // Xóa trạng thái lỗi khi người dùng bắt đầu nhập lại
     if (errors[name]) {
       setErrors({ ...errors, [name]: false });
     }
@@ -41,8 +40,6 @@ export default function Home() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Kiểm tra các trường bắt buộc
     const requiredFields = ["tenKhach", "loaiXe", "ngayThue"];
     let newErrors = {};
 
@@ -58,10 +55,7 @@ export default function Home() {
       return;
     }
 
-    // Giả lập lưu thành công
     addToast("Lưu thành công", "success");
-    
-    // Reset form (tùy chọn)
     setFormData({
       tenKhach: "", sdt: "", loaiXe: "", taiXe: "",
       ngayThue: "", gioThue: "", gia: "", ghiChu: ""
@@ -71,23 +65,14 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#bac4e5] flex items-center justify-center p-4 font-sans relative overflow-hidden">
       
-      {/* Hệ thống thông báo (Căn giữa tuyệt đối) */}
       <ToastContainer toasts={toasts} />
 
       <div className="w-full max-w-md relative">
-        
-        {/* THANH TAB (Navigation) 
-            -mb-[1px] để đè lên viền của card dưới, xóa vết nứt xám
-        */}
         <div className="relative z-10 -mb-[1px]">
           <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
 
-        {/* KHUNG NỘI DUNG CHÍNH (MAIN CARD) 
-            Bo góc 2.5rem cực mạnh theo phong cách hiện đại
-        */}
         <div className="bg-white shadow-2xl p-6 sm:p-8 border border-gray-200 rounded-[2.5rem] relative z-0 transition-all duration-500 overflow-hidden">
-          
           {activeTab === "dat-lich" ? (
             <DatLich 
               formData={formData} 
@@ -98,11 +83,10 @@ export default function Home() {
           ) : (
             <XemLich />
           )}
-
         </div>
       </div>
 
-      {/* Style CSS cho Animation (Nếu bạn không dùng globals.css) */}
+      {/* ĐÃ BỔ SUNG THÊM HIỆU ỨNG SCALE VÀO ĐÂY */}
       <style jsx global>{`
         @keyframes slideDown {
           from { transform: translateY(-100%); opacity: 0; }
@@ -111,12 +95,22 @@ export default function Home() {
         .animate-slide-down {
           animation: slideDown 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
         }
+
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in {
           animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* --- MỚI THÊM: Dành cho lớp mờ và Modal bên trang XemLich --- */
+        @keyframes scaleIn { 
+          from { opacity: 0; transform: scale(0.85); } 
+          to { opacity: 1; transform: scale(1); } 
+        }
+        .animate-scale-in { 
+          animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
         }
       `}</style>
     </main>
