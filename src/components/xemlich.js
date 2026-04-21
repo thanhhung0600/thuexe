@@ -1,15 +1,46 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { motion } from "framer-motion";
+import LichTrinhChiTiet from "./LichTrinhChiTiet";
 
 export default function XemLich() {
   const [currentWeekAnchor, setCurrentWeekAnchor] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [allRentals, setAllRentals] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // ==========================================
-  // THÔNG SỐ VÀNG ĐỂ Ô TRẮNG ÔM HẾT 4 CHẤM
-  const oRong = "35px"; 
-  const oCao = "50px";  // Tăng lên 52px để phủ hoàn toàn phần dưới
-  // ==========================================
+  const oRong = 38; 
+  const oCao = 58; 
+  const doDayLen = -1; 
+
+  const URL_API = "https://script.google.com/macros/s/AKfycbyuH92oNRqbSdhx-EgCRccEEiS7Dedsm3h0zlmaNndIJq3NB2hReT8ZbU_KrYlYHQqm/exec";
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(URL_API);
+      const data = await response.json();
+      setAllRentals(data);
+    } catch (error) {
+      console.error("Lỗi cập nhật dữ liệu:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const getRentalsForDate = (target) => {
+    const tStr = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(target.getDate()).padStart(2, '0')}`;
+    return allRentals.filter(item => {
+      if (!item.date && !item.ngày) return false;
+      const d = new Date(item.date || item.ngày);
+      const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return dStr === tStr;
+    });
+  };
 
   const daysInWeek = useMemo(() => {
     const startOfWeek = new Date(currentWeekAnchor);
@@ -23,121 +54,123 @@ export default function XemLich() {
     });
   }, [currentWeekAnchor]);
 
-  const goPrevWeek = () => {
-    const newDate = new Date(currentWeekAnchor);
-    newDate.setDate(currentWeekAnchor.getDate() - 7);
-    setCurrentWeekAnchor(newDate);
-  };
-  const goNextWeek = () => {
-    const newDate = new Date(currentWeekAnchor);
-    newDate.setDate(currentWeekAnchor.getDate() + 7);
-    setCurrentWeekAnchor(newDate);
-  };
-  const goToday = () => {
-    const today = new Date();
-    setCurrentWeekAnchor(today);
-    setSelectedDate(today);
-  };
-
-  const getVNDayName = (date) => {
-    const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-    return days[date.getDay()];
-  };
-
-  const isSameDay = (d1, d2) => 
-    d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
+  const isSameDay = (d1, d2) => d1.toLocaleDateString() === d2.toLocaleDateString();
+  const dotColors = ["bg-cyan-300", "bg-indigo-400", "bg-teal-400", "bg-amber-400"];
 
   return (
-    <div className="flex flex-col bg-white font-sans animate-fade-in overflow-visible pt-0 relative z-0">
+    // Bỏ min-h-screen để các phần sát lại nhau theo chiều dọc
+    <div className="flex flex-col bg-white font-sans max-w-md mx-auto relative overflow-hidden h-auto pb-2">
       
-      {/* THANH LỊCH NGANG */}
-      <div className="mx-0 mt-0 bg-gray-100/80 rounded-2xl p-1 flex items-center justify-between relative z-20 overflow-visible border border-gray-200/40">
-        
-        {/* Nút lùi */}
-        <button onClick={goPrevWeek} className="flex items-center justify-center w-7 h-9 text-gray-500 hover:text-blue-600 transition-all active:scale-75 bg-white/50 hover:bg-white rounded-xl shadow-sm border border-white">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" />
-          </svg>
+      {/* 1. THANH LỊCH NGANG */}
+      <div className="mx-4 mt-0 bg-gray-50 rounded-[24px] p-1.5 flex items-center justify-between border border-gray-100 relative z-20 shadow-sm">
+        <button onClick={() => setCurrentWeekAnchor(new Date(currentWeekAnchor.setDate(currentWeekAnchor.getDate() - 7)))} className="w-8 h-10 flex items-center justify-center text-gray-400 z-30 relative active:scale-75 transition-transform">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
         </button>
 
-        {/* Dãy 7 ngày */}
-        <div className="flex flex-1 justify-center gap-0.5 px-1 items-center h-12 relative overflow-visible">
+        <div className="flex flex-1 justify-around items-center h-12 relative px-1">
           {daysInWeek.map((dateItem, idx) => {
             const active = isSameDay(dateItem, selectedDate);
-            return (
-              <button 
-                key={idx}
-                onClick={() => setSelectedDate(dateItem)}
-                className="flex flex-col items-center justify-center flex-1 min-w-0 max-w-[42px] h-full relative outline-none"
-              >
-                {/* HÌNH CHỮ NHẬT TRẮNG (BACKGROUND ACTIVE) */}
-                <div 
-                  className={`absolute left-1/2 -translate-x-1/2 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.1)] rounded-xl transition-all duration-500 z-0
-                  ${active 
-                    ? "opacity-100 scale-105 -translate-y-[-0.5px]" 
-                    : "opacity-0 scale-75 translate-y-0 pointer-events-none"}`}
-                  style={{ 
-                    width: oRong, 
-                    height: oCao,
-                    bottom: '0',
-                    transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)'
-                  }}
-                />
+            const count = getRentalsForDate(dateItem).length;
 
-                {/* NỘI DUNG CHỮ & DẤU CHẤM */}
-                <div className="relative z-10 flex flex-col items-center pb-3">
-                  <span className={`text-[12px] font-[800] leading-none transition-colors duration-300 ${active ? "text-blue-600" : "text-gray-900"}`}>
+            return (
+              <div key={idx} className="flex-1 h-full relative flex items-center justify-center">
+                {active && (
+                  <motion.div 
+                    layoutId="active-bg"
+                    className="absolute bg-white shadow-[0_12px_30px_rgba(0,0,0,0.08)] rounded-[16px] z-0"
+                    transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                    style={{ 
+                      width: oRong, 
+                      height: oCao,
+                      top: `calc(50% + ${doDayLen}px)`,
+                      y: "-50%"
+                    }}
+                  />
+                )}
+
+                <button 
+                  onClick={() => setSelectedDate(dateItem)} 
+                  className="relative z-10 flex flex-col items-center justify-center w-full h-full outline-none"
+                >
+                  <span className={`text-[14px] font-[600] transition-colors duration-300 ${active ? "text-blue-600" : "text-gray-900"}`}>
                     {dateItem.getDate()}
                   </span>
-                  <span className={`text-[7px] mt-1 font-bold uppercase tracking-tighter transition-colors duration-300 ${active ? "text-blue-500" : "text-gray-500"}`}>
-                    {getVNDayName(dateItem)}
+                  <span className={`text-[8px] font-black uppercase tracking-tighter ${active ? "text-blue-500" : "text-gray-400"}`}>
+                    {["CN", "T2", "T3", "T4", "T5", "T6", "T7"][dateItem.getDay()]}
                   </span>
-
-                  {/* 4 DẤU CHẤM: Đẩy lên cao và nằm trọn trong ô trắng */}
-                  <div className="absolute -bottom-0 grid grid-cols-2 gap-[2.5px]">
-                    <div className={`rounded-full bg-blue-400 transition-all duration-500 ${active ? 'w-[3.5px] h-[3.5px] opacity-100' : 'w-[3.5px] h-[3.5px] opacity-30'}`}></div>
-                    <div className={`rounded-full bg-indigo-400 transition-all duration-500 ${active ? 'w-[3.5px] h-[3.5px] opacity-100' : 'w-[3.5px] h-[3.5px] opacity-30'}`}></div>
-                    <div className={`rounded-full bg-teal-400 transition-all duration-500 ${active ? 'w-[3.5px] h-[3.5px] opacity-100' : 'w-[3.5px] h-[3.5px] opacity-30'}`}></div>
-                    <div className={`rounded-full bg-amber-400 transition-all duration-500 ${active ? 'w-[3.5px] h-[3.5px] opacity-100' : 'w-[3.5px] h-[3.5px] opacity-30'}`}></div>
+                  
+                  <div className="mt-1 flex items-center justify-center h-[10px] w-full">
+                    {count > 0 && (
+                      count > 4 ? <div className="h-[2.5px] w-[10px] rounded-full bg-blue-400" /> :
+                      <div className="grid grid-cols-2 gap-[2px]">
+                        {[...Array(4)].map((_, i) => (
+                          <div key={i} className={`w-[2.8px] h-[2.8px] rounded-full transition-all duration-500 
+                            ${i < count ? dotColors[i] : "bg-transparent"} 
+                            ${active ? 'opacity-100' : 'opacity-50'}`} 
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              </button>
+                </button>
+              </div>
             );
           })}
         </div>
+        
+        <button onClick={() => setCurrentWeekAnchor(new Date(currentWeekAnchor.setDate(currentWeekAnchor.getDate() + 7)))} className="w-8 h-10 flex items-center justify-center text-gray-400 z-30 relative active:scale-75 transition-transform">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+        </button>
+      </div>
 
-        {/* Nút tới */}
-        <button onClick={goNextWeek} className="flex items-center justify-center w-7 h-9 text-gray-500 hover:text-blue-600 transition-all active:scale-75 bg-white/50 hover:bg-white rounded-xl shadow-sm border border-white">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
+      {/* 2. DÒNG NGÀY THÁNG */}
+      <div className="w-full text-center py-2">
+        <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
+          {selectedDate.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+        </h2>
+      </div>
+
+      {/* 3. KHUNG NỘI DUNG CHÍNH (CỐ ĐỊNH ĐỘ CAO) */}
+<div className="mx-4 h-[420px] overflow-y-auto bg-gray-50/50 rounded-[26px] shadow-inner border border-gray-100 no-scrollbar relative mb-2">
+  {loading ? (
+    <div className="flex flex-col items-center justify-center h-full gap-3">
+      <span className="text-3xl animate-pulse">📅</span>
+      <div className="text-[15px] font-black text-blue-600 uppercase tracking-[0.2em] animate-pulse">Đang đồng bộ dữ liệu</div>
+    </div>
+  ) : (
+    <LichTrinhChiTiet data={getRentalsForDate(selectedDate)} />
+  )}
+</div>
+
+      {/* 4. FOOTER (SÁT LỀ DƯỚI) */}
+      <div className="flex items-center justify-center py-1 gap-3">
+        <button 
+          onClick={() => { const t = new Date(); setCurrentWeekAnchor(t); setSelectedDate(t); }}
+          className="px-10 py-3 bg-white border border-gray-100 text-blue-600 text-[11px] font-black uppercase tracking-[0.3em] rounded-full shadow-md active:scale-95 transition-all"
+        >
+          Hôm nay
+        </button>
+
+        <button 
+          onClick={fetchData} 
+          disabled={loading}
+          className={`w-11 h-11 bg-white border border-gray-100 text-gray-500 rounded-full shadow-md active:scale-90 transition-all flex items-center justify-center ${loading ? 'opacity-50' : ''}`}
+        >
+          <svg 
+            className={`w-5 h-5 ${loading ? 'animate-spin text-blue-500' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
       </div>
 
-      {/* DÒNG CHI TIẾT NGÀY THÁNG */}
-      <div className="text-center py-2 relative z-10">
-        <p className="text-[9px] font-bold text-gray-400 tracking-[0.2em] uppercase">
-          {selectedDate.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
-        </p>
-      </div>
-
-      {/* KHUNG NỘI DUNG TRỐNG */}
-      <div className="h-[475px] overflow-y-auto bg-gray-50/40 rounded-[1rem] mx-0 border border-gray-100 mb-2 shadow-inner custom-scrollbar relative z-0">
-        <div className="min-h-full flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4 border border-gray-100">
-            <span className="text-3xl opacity-20">🚗</span>
-          </div>
-          <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.25em]">Chưa có dữ liệu</p>
-        </div>
-      </div>
-
-      <div className="py-1 text-center">
-        <button onClick={goToday} className="text-[11px] font-bold text-blue-600 uppercase tracking-[0.2em] px-5 py-1 hover:bg-blue-50 rounded-full transition-all">Hôm nay</button>
-      </div>
-
       <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
   );

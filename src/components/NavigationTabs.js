@@ -10,7 +10,7 @@ export default function NavigationTabs({ activeTab, setActiveTab }) {
         <button
           key={tab.id}
           onClick={() => setActiveTab(tab.id)}
-          className={`flex-1 py-3 transition-all relative flex items-center justify-center text-[13px] font-bold uppercase tracking-[0.15em] antialiased 
+          className={`flex-1 py-3 transition-all relative flex items-center justify-center text-[15px] font-bold uppercase tracking-[0.15em] antialiased 
           ${
             activeTab === tab.id
               ? "bg-white text-blue-600 border-t border-l border-r border-gray-200 border-b-transparent rounded-t-[2rem] z-20" 
