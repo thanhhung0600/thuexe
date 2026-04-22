@@ -47,7 +47,7 @@ export default function NavigationTabs({ activeTab, setActiveTab }) {
                   // Active cho các nút icon (Bo 4 góc, lơ lửng)
                   ? "bg-white text-blue-600 border border-gray-200 rounded-[2rem] mb-2 z-20 shadow-sm" 
                   // Active cho các nút chữ (Bo 2 góc trên, dính liền khung)
-                  : "bg-white text-blue-600 border-t border-l border-r border-white border-b-transparent rounded-t-[2rem] z-20" 
+                  : "bg-white text-blue-600 border-t border-l border-r border-white border-b-transparent rounded-t-[1.5rem] z-20" 
                 // Không Active (Màu xanh, chìm xuống)
                 : "bg-blue-600 text-white border-none rounded-3xl mb-2 z-0 opacity-70"
             }`}

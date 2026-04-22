@@ -1,6 +1,6 @@
 "use client";
 import ThongKe from "../components/thongke";
-import TimKiem from "../components/timkiem"; // ✅ THÊM DÒNG NÀY
+import TimKiem from "../components/timkiem";
 import { useState } from "react";
 import DatLich from "../components/datlich";
 import XemLich from "../components/xemlich";
@@ -45,6 +45,7 @@ export default function Home() {
     
     if (isSubmitting) return;
 
+    // 1. Kiểm tra trường bắt buộc
     const requiredFields = ["tenKhach", "loaiXe", "ngayThue"];
     let newErrors = {};
     requiredFields.forEach(field => {
@@ -62,13 +63,34 @@ export default function Home() {
     setIsSubmitting(true);
     addToast("Đang lưu thông tin...", "success");
 
+    // 2. Tự động tính Thứ từ Ngày thuê
+    let thuTieuDien = "";
+    if (formData.ngayThue) {
+      const dateObj = new Date(formData.ngayThue);
+      const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+      thuTieuDien = days[dateObj.getDay()];
+    }
+
+    // 3. Map (Đồng bộ) dữ liệu formData khớp với API Backend
+    const payload = {
+      ngay: formData.ngayThue,       // Cột A
+      thu: thuTieuDien,              // Cột B
+      tenKhachHang: formData.tenKhach, // Cột C
+      soDienThoai: formData.sdt,     // Cột D
+      loaiXe: formData.loaiXe,       // Cột E
+      taiXe: formData.taiXe,         // Cột F
+      gio: formData.gioThue,         // Cột G
+      gia: formData.gia,             // Cột H
+      ghiChu: formData.ghiChu        // Cột I
+    };
+
     try {
       const response = await fetch('/api/dat-lich', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload), // Gửi payload đã được map chuẩn
       });
 
       const result = await response.json();
@@ -76,12 +98,13 @@ export default function Home() {
       if (result.success) {
         addToast("Lưu thành công!", "success");
         
+        // Reset form sau khi lưu thành công
         setFormData({
           tenKhach: "", sdt: "", loaiXe: "", taiXe: "",
           ngayThue: "", gioThue: "", gia: "", ghiChu: ""
         });
       } else {
-        throw new Error(result.error || "Lỗi không xác định từ Google");
+        throw new Error(result.error || "Lỗi không xác định từ Server");
       }
 
     } catch (error) {
@@ -101,7 +124,7 @@ export default function Home() {
           <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
 
-        <div className="bg-white shadow-2xl p-6 sm:p-8 border border-white rounded-[2.5rem] relative z-0 transition-all duration-500 overflow-hidden">
+        <div className="bg-white shadow-2xl p-6 sm:p-8 border border-white rounded-[1.5rem] relative z-0 transition-all duration-500 overflow-hidden">
           {activeTab === "dat-lich" && (
             <DatLich 
               formData={formData} 
@@ -120,7 +143,6 @@ export default function Home() {
             <ThongKe />
           )}
 
-          {/* ✅ THÊM KHỐI HIỂN THỊ TÌM KIẾM Ở ĐÂY */}
           {activeTab === "tim-kiem" && (
             <TimKiem />
           )}
