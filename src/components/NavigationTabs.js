@@ -3,7 +3,7 @@
 export default function NavigationTabs({ activeTab, setActiveTab }) {
   const tabs = [
     { id: "dat-lich", label: "Đặt lịch" },
-    { id: "xem-lich", label: "Lịch thuê" },
+    { id: "xem-lich", label: "Xem lịch" },
     { 
       id: "thong-ke", 
       label: "", 
@@ -35,7 +35,7 @@ export default function NavigationTabs({ activeTab, setActiveTab }) {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`py-3 transition-all relative flex items-center justify-center text-[15px] font-black uppercase tracking-[0.15em] antialiased 
+            className={`py-3 transition-all relative flex items-center justify-center text-[14px] font-bold uppercase tracking-[0.15em] antialiased 
             
             /* 👇 Nếu là icon tab thì hẹp lại, nếu là tab chữ thì nở ra 👇 */
             ${isIconTab ? "flex-[0.34] min-w-[40px]" : "flex-1"}
