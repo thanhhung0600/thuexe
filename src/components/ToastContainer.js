@@ -4,21 +4,20 @@ import React, { useEffect, useState } from 'react';
 export default function ToastContainer({ toasts }) {
   const [keyboardOffset, setKeyboardOffset] = useState(0);
 
+  // 👉 BẠN TÙY CHỈNH ĐỘ SÂU Ở ĐÂY:
+  // Giảm số này xuống (ví dụ: 0, 5, hoặc -5) -> Thông báo sẽ nhích lên sát tai thỏ hơn.
+  // Tăng số này lên (ví dụ: 20, 30) -> Thông báo sẽ tụt xuống sâu hơn.
+  const KHOANG_CACH_TAI_THO = -10; // <--- Sửa con số này cho đến khi bạn ưng ý
+
   useEffect(() => {
-    // Chỉ chạy trên trình duyệt client
     if (typeof window === 'undefined' || !window.visualViewport) return;
 
     const updatePosition = () => {
-      // visualViewport.offsetTop chính là số pixel mà Safari đã đẩy trang web lên 
-      // khi bàn phím ảo xuất hiện.
       setKeyboardOffset(window.visualViewport.offsetTop);
     };
 
-    // Lắng nghe sự kiện khi bàn phím bật lên / tắt đi hoặc cuộn
     window.visualViewport.addEventListener('resize', updatePosition);
     window.visualViewport.addEventListener('scroll', updatePosition);
-    
-    // Gọi ngay lần đầu để lấy vị trí chuẩn
     updatePosition();
 
     return () => {
@@ -33,11 +32,10 @@ export default function ToastContainer({ toasts }) {
     <div 
       className="absolute left-0 right-0 z-[99999] flex flex-col items-center gap-2 pointer-events-none px-4"
       style={{ 
-        // Bám vào top của Layout
         top: 0,
-        // Dùng transform để kéo Toast tụt xuống đúng bằng khoảng cách bị đẩy + khoảng cách an toàn tai thỏ (45px)
-        transform: `translateY(calc(${keyboardOffset}px + max(env(safe-area-inset-top), 45px)))`,
-        transition: 'transform 0.1s ease-out' // Mượt mà khi bàn phím thụt lên/xuống
+        // Công thức đã được tối ưu để nhận biến Tùy chỉnh của bạn
+        transform: `translateY(calc(${keyboardOffset}px + max(env(safe-area-inset-top), 35px) + ${KHOANG_CACH_TAI_THO}px))`,
+        transition: 'transform 0.1s ease-out' 
       }}
     >
       {toasts.map((toast) => (
