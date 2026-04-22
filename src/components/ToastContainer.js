@@ -7,7 +7,7 @@ export default function ToastContainer({ toasts }) {
   // 👉 BẠN TÙY CHỈNH ĐỘ SÂU Ở ĐÂY:
   // Giảm số này xuống (ví dụ: 0, 5, hoặc -5) -> Thông báo sẽ nhích lên sát tai thỏ hơn.
   // Tăng số này lên (ví dụ: 20, 30) -> Thông báo sẽ tụt xuống sâu hơn.
-  const KHOANG_CACH_TAI_THO = -10; // <--- Sửa con số này cho đến khi bạn ưng ý
+  const KHOANG_CACH_TAI_THO = -20; // <--- Sửa con số này cho đến khi bạn ưng ý
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.visualViewport) return;
