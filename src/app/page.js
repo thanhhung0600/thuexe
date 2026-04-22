@@ -1,4 +1,6 @@
 "use client";
+import ThongKe from "../components/thongke";
+import TimKiem from "../components/timkiem"; // ✅ THÊM DÒNG NÀY
 import { useState } from "react";
 import DatLich from "../components/datlich";
 import XemLich from "../components/xemlich";
@@ -91,7 +93,6 @@ export default function Home() {
   };
 
   return (
-    // ✅ CHỈNH SỬA Ở ĐÂY: Đổi min-h-screen thành min-h-[100dvh] w-full
     <main className="min-h-[100dvh] w-full bg-[#bac4e5] flex items-center justify-center p-4 font-sans relative overflow-hidden">
       <ToastContainer toasts={toasts} />
 
@@ -100,8 +101,8 @@ export default function Home() {
           <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
 
-        <div className="bg-white shadow-2xl p-6 sm:p-8 border border-gray-200 rounded-[2.5rem] relative z-0 transition-all duration-500 overflow-hidden">
-          {activeTab === "dat-lich" ? (
+        <div className="bg-white shadow-2xl p-6 sm:p-8 border border-white rounded-[2.5rem] relative z-0 transition-all duration-500 overflow-hidden">
+          {activeTab === "dat-lich" && (
             <DatLich 
               formData={formData} 
               handleChange={handleChange} 
@@ -109,8 +110,19 @@ export default function Home() {
               errors={errors}
               isSubmitting={isSubmitting} 
             />
-          ) : (
+          )}
+          
+          {activeTab === "xem-lich" && (
             <XemLich />
+          )}
+
+          {activeTab === "thong-ke" && (
+            <ThongKe />
+          )}
+
+          {/* ✅ THÊM KHỐI HIỂN THỊ TÌM KIẾM Ở ĐÂY */}
+          {activeTab === "tim-kiem" && (
+            <TimKiem />
           )}
         </div>
       </div>
