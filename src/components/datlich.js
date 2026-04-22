@@ -35,10 +35,10 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
             className={`${inputBaseClass} cursor-pointer pr-8 ${errors.loaiXe ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
           >
             <option value="">Chọn xe *</option>
-            <option value="Xe 4 chỗ (Thái)">Xe 4 chỗ (Thái)</option>
-            <option value="Xe 4 chỗ (Học)">Xe 4 chỗ (Học)</option>
-            <option value="Xe 7 chỗ (Toyota)">Xe 7 chỗ (Toyota)</option>
-            <option value="Xe 7 chỗ (Mitsubishi)">Xe 7 chỗ (Mitsubishi)</option>
+            <option value="Xe 4 (Thái)">Xe 4 chỗ(Thái)</option>
+            <option value="Xe 4 (Học)">Xe 4 chỗ (Học)</option>
+            <option value="Xe 7 (Mitsubishi)">Xe 7 chỗ (Mitsubishi)</option>
+            <option value="Xe 8 (Toyota)">Xe 7 chỗ (Toyota)</option>
           </select>
         </div>
 
