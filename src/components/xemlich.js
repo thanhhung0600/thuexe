@@ -86,7 +86,7 @@ export default function XemLich() {
     >
       
       {/* 1. THANH LỊCH NGANG */}
-      <motion.div variants={itemVariants} className="mx-[-10] mt-4 bg-gray-50 rounded-[20px] p-1.5 flex items-center justify-between border border-gray-100 shadow-sm relative z-20">
+      <motion.div variants={itemVariants} className="mx-[-17] mt-4 bg-gray-50 rounded-[20px] p-1.5 flex items-center justify-between border border-gray-100 shadow-sm relative z-20">
         <button onClick={() => setCurrentWeekAnchor(new Date(currentWeekAnchor.setDate(currentWeekAnchor.getDate() - 7)))} className="w-8 h-10 flex items-center justify-center text-gray-400 z-30 relative active:scale-75 transition-transform">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
         </button>
@@ -155,7 +155,7 @@ export default function XemLich() {
       </motion.div>
 
       {/* 3. KHUNG NỘI DUNG CHÍNH */}
-      <motion.div variants={itemVariants} className="mx-[-10] h-[420px] overflow-y-auto bg-gray-50/50 rounded-[26px] shadow-inner border border-gray-100 no-scrollbar relative mb-2">
+      <motion.div variants={itemVariants} className="mx-[-17] h-[420px] overflow-y-auto bg-gray-50/50 rounded-[26px] shadow-inner border border-gray-100 no-scrollbar relative mb-2">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <span className="text-3xl animate-pulse">📅</span>

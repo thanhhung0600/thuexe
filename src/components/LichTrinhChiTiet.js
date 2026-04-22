@@ -35,7 +35,7 @@ export default function LichTrinhChiTiet({ data }) {
                 <div
                     key={index}
                     // THAY ĐỔI: Sử dụng animation 'animate-pop-in' để tạo hiệu ứng nảy
-                    className={`w-full ${defaultColors[index % 4]} rounded-2xl flex flex-col justify-center min-h-[95px] p-3 relative 
+                    className={`w-[104%] ml-[-2%] ${defaultColors[index % 4]} rounded-2xl flex flex-col justify-center min-h-[95px] p-3 relative 
                                 transition-all duration-150 active:scale-[0.95] cursor-pointer
                                 shadow-[inset_1px_1px_3px_rgba(255,255,255,0.4),inset_-1px_-1px_4px_rgba(0,0,0,0.15),0_4px_8px_rgba(0,0,0,0.1)]
                                 opacity-0 animate-pop-in`}
@@ -83,7 +83,7 @@ export default function LichTrinhChiTiet({ data }) {
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            <h3 className="text-[17px] font-black leading-tight truncate">
+                            <h3 className="text-[10px] font-sans leading-tight truncate">
                                 {item.tenKhach || "Khách thuê"}
                             </h3>
                             {item.sdt && (
