@@ -29,13 +29,13 @@ export default function LichTrinhChiTiet({ data }) {
     }
 
     return (
-        <div className="flex flex-col gap-[10px] p-[12px] relative">
+        <div className="flex flex-col gap-[10px] p-[6px] relative">
             
             {data.map((item, index) => (
                 <div
                     key={index}
                     // THAY ĐỔI: Sử dụng animation 'animate-pop-in' để tạo hiệu ứng nảy
-                    className={`w-[104%] ml-[-2%] ${defaultColors[index % 4]} rounded-2xl flex flex-col justify-center min-h-[95px] p-3 relative 
+                    className={`w-[100.5%] ml-[-0.25%] ${defaultColors[index % 4]} rounded-[13px] flex flex-col justify-center min-h-[95px] p-3 relative 
                                 transition-all duration-150 active:scale-[0.95] cursor-pointer
                                 shadow-[inset_1px_1px_3px_rgba(255,255,255,0.4),inset_-1px_-1px_4px_rgba(0,0,0,0.15),0_4px_8px_rgba(0,0,0,0.1)]
                                 opacity-0 animate-pop-in`}
@@ -72,18 +72,16 @@ export default function LichTrinhChiTiet({ data }) {
                     </div>
 
                     {/* NỘI DUNG BÊN TRÁI CARD */}
-                    <div className="relative z-10 flex flex-col gap-0.5 text-white pr-14">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-black uppercase bg-white/25 px-1.5 py-0.5 rounded tracking-widest">
+                    <div className="relative z-10 flex flex-col gap-0.5 text-white pr-0 -mt-0.5">
+                        <div className="flex items-center gap-0.25 pr-25">
+                            <span className="text-[9px] font-black uppercase bg-white/25 px-0.5 py-0.5 rounded tracking-widest">
                                 {item.label || "______"}
                             </span>
-                            <span className="text-[13px] font-bold opacity-90 truncate">
-                                • {item.taiXe || "Chưa có tài"}
-                            </span>
+                            <span className="text-[13px] font-bold opacity-90 truncate">• {item.taiXe || "Chưa có tài"}</span>
                         </div>
                         
-                        <div className="flex items-center gap-2">
-                            <h3 className="text-[10px] font-sans leading-tight truncate">
+                        <div className="flex items-center gap-2 mt-2">
+                            <h3 className="text-[15px] font-bold leading-tight truncate">
                                 {item.tenKhach || "Khách thuê"}
                             </h3>
                             {item.sdt && (
