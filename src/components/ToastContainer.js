@@ -1,12 +1,44 @@
+"use client";
+import React, { useEffect, useState } from 'react';
+
 export default function ToastContainer({ toasts }) {
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+
+  useEffect(() => {
+    // Chỉ chạy trên trình duyệt client
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+
+    const updatePosition = () => {
+      // visualViewport.offsetTop chính là số pixel mà Safari đã đẩy trang web lên 
+      // khi bàn phím ảo xuất hiện.
+      setKeyboardOffset(window.visualViewport.offsetTop);
+    };
+
+    // Lắng nghe sự kiện khi bàn phím bật lên / tắt đi hoặc cuộn
+    window.visualViewport.addEventListener('resize', updatePosition);
+    window.visualViewport.addEventListener('scroll', updatePosition);
+    
+    // Gọi ngay lần đầu để lấy vị trí chuẩn
+    updatePosition();
+
+    return () => {
+      window.visualViewport.removeEventListener('resize', updatePosition);
+      window.visualViewport.removeEventListener('scroll', updatePosition);
+    };
+  }, []);
+
   if (!toasts || toasts.length === 0) return null;
 
   return (
     <div 
-      className="fixed top-0 left-0 right-0 z-[99999] flex flex-col items-center gap-2 pointer-events-none px-4"
-      // ✅ BÍ QUYẾT Ở ĐÂY: Dùng hàm max() để khóa cứng khoảng cách an toàn, 
-      // không cho phép thông báo nhảy lên cao hơn 55px kể cả khi mở bàn phím
-      style={{ paddingTop: 'calc(max(env(safe-area-inset-top), 55px) + 16px)' }}
+      className="absolute left-0 right-0 z-[99999] flex flex-col items-center gap-2 pointer-events-none px-4"
+      style={{ 
+        // Bám vào top của Layout
+        top: 0,
+        // Dùng transform để kéo Toast tụt xuống đúng bằng khoảng cách bị đẩy + khoảng cách an toàn tai thỏ (45px)
+        transform: `translateY(calc(${keyboardOffset}px + max(env(safe-area-inset-top), 45px)))`,
+        transition: 'transform 0.1s ease-out' // Mượt mà khi bàn phím thụt lên/xuống
+      }}
     >
       {toasts.map((toast) => (
         <div
