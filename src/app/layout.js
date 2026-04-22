@@ -7,6 +7,14 @@ const montserrat = Montserrat({
   weight: ['400', '700', '900'], // Các độ dày cần dùng
 });
 
+// ✅ THÊM ĐOẠN NÀY: Bắt buộc để iPhone cho phép background tràn ra "tai thỏ"
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="vi">

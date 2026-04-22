@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #bac4e5; /* ✅ Đổi màu nền gốc thành màu xanh của bạn */
   --foreground: #171717;
 }
 
@@ -14,15 +14,22 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #bac4e5; /* ✅ Khóa luôn màu xanh kể cả khi dùng Dark Mode */
+    --foreground: #171717;
   }
 }
 
-body {
+html, body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  
+  /* ✅ CÁC DÒNG THÊM VÀO CHO IPHONE */
+  min-height: 100dvh; /* dvh giúp tự động căn chỉnh với thanh địa chỉ Safari */
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 
 /* Trong thẻ <style jsx> hoặc file globals.css */

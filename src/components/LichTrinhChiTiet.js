@@ -88,7 +88,7 @@ export default function LichTrinhChiTiet({ data }) {
                             </h3>
                             {item.sdt && (
                                 <span className="text-[12px] font-bold opacity-80 mt-0.5">
-                                    ({item.sdt})
+                                    • {item.sdt}
                                 </span>
                             )}
                         </div>

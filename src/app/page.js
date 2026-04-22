@@ -9,7 +9,6 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("dat-lich");
   const [toasts, setToasts] = useState([]);
   const [errors, setErrors] = useState({});
-  // ✅ THÊM: Trạng thái đang gửi dữ liệu
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -23,7 +22,6 @@ export default function Home() {
     ghiChu: ""
   });
 
-  // --- HỆ THỐNG THÔNG BÁO (Toast) ---
   const addToast = (message, type = "error") => {
     const id = Date.now();
     setToasts((prev) => [{ id, message, type }, ...prev].slice(0, 3));
@@ -32,7 +30,6 @@ export default function Home() {
     }, 3000);
   };
 
-  // --- XỬ LÝ THAY ĐỔI INPUT ---
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -41,14 +38,11 @@ export default function Home() {
     }
   };
 
-  // --- XỬ LÝ GỬI FORM ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Nếu đang gửi thì không cho thực hiện tiếp (Double check)
     if (isSubmitting) return;
 
-    // 1. Kiểm tra các trường bắt buộc
     const requiredFields = ["tenKhach", "loaiXe", "ngayThue"];
     let newErrors = {};
     requiredFields.forEach(field => {
@@ -63,12 +57,10 @@ export default function Home() {
       return;
     }
 
-    // ✅ BẮT ĐẦU GỬI: Khóa nút bấm
     setIsSubmitting(true);
     addToast("Đang lưu thông tin...", "success");
 
     try {
-      // 2. Gửi dữ liệu đến API Route nội bộ
       const response = await fetch('/api/dat-lich', {
         method: 'POST',
         headers: {
@@ -79,11 +71,9 @@ export default function Home() {
 
       const result = await response.json();
 
-      // 3. Kiểm tra phản hồi từ Server
       if (result.success) {
         addToast("Lưu thành công!", "success");
         
-        // ✅ THÀNH CÔNG: Reset form về trống
         setFormData({
           tenKhach: "", sdt: "", loaiXe: "", taiXe: "",
           ngayThue: "", gioThue: "", gia: "", ghiChu: ""
@@ -96,13 +86,13 @@ export default function Home() {
       console.error("Lỗi gửi dữ liệu:", error);
       addToast("Lỗi: " + error.message, "error");
     } finally {
-      // ✅ KẾT THÚC: Mở khóa nút bấm (Dù thành công hay lỗi)
       setIsSubmitting(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-[#bac4e5] flex items-center justify-center p-4 font-sans relative overflow-hidden">
+    // ✅ CHỈNH SỬA Ở ĐÂY: Đổi min-h-screen thành min-h-[100dvh] w-full
+    <main className="min-h-[100dvh] w-full bg-[#bac4e5] flex items-center justify-center p-4 font-sans relative overflow-hidden">
       <ToastContainer toasts={toasts} />
 
       <div className="w-full max-w-md relative">
@@ -117,7 +107,6 @@ export default function Home() {
               handleChange={handleChange} 
               handleSubmit={handleSubmit} 
               errors={errors}
-              // ✅ TRUYỀN THÊM: Trạng thái loading vào component DatLich
               isSubmitting={isSubmitting} 
             />
           ) : (
