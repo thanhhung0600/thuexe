@@ -53,7 +53,7 @@ export default function Home() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      addToast("Vui lòng điền đủ thông tin", "error");
+      addToast("Vui lòng điền đầy đủ thông tin", "error");
       return;
     }
 
