@@ -7,12 +7,13 @@ const montserrat = Montserrat({
   weight: ['400', '700', '900'], // Các độ dày cần dùng
 });
 
-// ✅ THÊM ĐOẠN NÀY: Bắt buộc để iPhone cho phép background tràn ra "tai thỏ"
+// ✅ ĐÃ SỬA: Bắt buộc phải có themeColor để phủ màu lên "tai thỏ" iPhone
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
+  themeColor: '#bac4e5', // <--- BẠN ĐỪNG QUÊN DÒNG NÀY NHÉ
 };
 
 export default function RootLayout({ children }) {

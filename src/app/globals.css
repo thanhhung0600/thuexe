@@ -19,17 +19,25 @@
   }
 }
 
-html, body {
-  background: var(--background);
+/* ✅ Tách riêng thẻ html để ép màu nền tĩnh tuyệt đối */
+html {
+  background-color: #bac4e5 !important;
+}
+
+body {
+  background-color: #bac4e5 !important;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   
-  /* ✅ CÁC DÒNG THÊM VÀO CHO IPHONE */
-  min-height: 100dvh; /* dvh giúp tự động căn chỉnh với thanh địa chỉ Safari */
+  /* Căn chỉnh cho thiết bị di động */
+  min-height: 100dvh;
   width: 100%;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  
+  /* ✅ THÊM DÒNG NÀY: Khóa hiệu ứng vuốt nảy "cao su" của iPhone để không bị lộ mép trắng */
+  overscroll-behavior-y: none;
 }
 
 /* Trong thẻ <style jsx> hoặc file globals.css */
