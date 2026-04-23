@@ -6,16 +6,21 @@ export default function ThongKe() {
   const [isLoading, setIsLoading] = useState(true);
   const [chartData, setChartData] = useState([]);
   const [historyData, setHistoryData] = useState([]);
+  
+  // Tách riêng trạng thái cho Cột và cho Đường Line
   const [showHeights, setShowHeights] = useState(false);
+  const [showLine, setShowLine] = useState(false);
 
   const totalActivities = chartData.reduce((sum, item) => sum + item.count, 0);
 
   const loadData = useCallback(async (isSilent = false) => {
-    // Nếu isSilent = false (load lần đầu hoặc bấm Làm mới), hiện loading và reset chiều cao
     if (!isSilent) {
       setIsLoading(true);
       setShowHeights(false);
     }
+    
+    // BÍ QUYẾT: Luôn làm biến mất đường Line cũ ngay lập tức khi bắt đầu lấy dữ liệu mới
+    setShowLine(false); 
     
     try {
       const m = currentDate.getMonth() + 1;
@@ -27,9 +32,9 @@ export default function ThongKe() {
         setChartData(result.data);
         setHistoryData(result.history);
         
-        // Trì hoãn 100ms để trình duyệt kịp render DOM ở mức 0% rồi mới mọc lên
         setTimeout(() => {
           setShowHeights(true);
+          setShowLine(true); // Kích hoạt vẽ lại đường line từ trái sang phải
         }, 100);
       }
     } catch (err) {
@@ -39,14 +44,14 @@ export default function ThongKe() {
     }
   }, [currentDate]);
 
-  // Hiệu ứng khi LẦN ĐẦU TỪ TAB KHÁC CHUYỂN SANG
   useEffect(() => {
     loadData(false);
-    // Hàm dọn dẹp: Đảm bảo khi rời tab, chiều cao về 0 để lần sau vào lại có hiệu ứng mọc lên
-    return () => setShowHeights(false);
+    return () => {
+      setShowHeights(false);
+      setShowLine(false);
+    };
   }, []);
 
-  // Hiệu ứng KHI ĐỔI THÁNG (Tải ngầm mượt mà)
   useEffect(() => {
     loadData(true);
   }, [currentDate, loadData]);
@@ -68,7 +73,6 @@ export default function ThongKe() {
             Tổng: <span className="text-blue-600 ml-1">{totalActivities} Chuyến</span>
           </span>
           
-          {/* Cụm Realtime */}
           <div className="w-[70px] h-[20px] bg-slate-50 border border-gray-200 rounded-full flex items-center justify-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></div>
             <span className="text-[10px] font-bold text-green-400 animate-pulse tracking-tight">Realtime</span>
@@ -77,7 +81,6 @@ export default function ThongKe() {
 
         <div className="h-[160px] mt-8 flex items-end justify-around gap-2 relative z-10 border-b border-gray-200 pb-2">
           {chartData.map((col) => {
-            // Giá trị cao nhất chiếm 85%, giá trị 0 chiếm 4%
             const heightPct = Math.max((col.count / maxVal) * 85, 4);
 
             return (
@@ -110,7 +113,6 @@ export default function ThongKe() {
     const maxVal = Math.max(...historyData.map(d => d.count), 1);
     const getHPct = (count) => Math.max((count / maxVal) * 75, 4);
     
-    // Tính điểm nối cho đường nét đứt
     const points = historyData.map((col, i) => {
       const x = ((i + 0.5) / historyData.length) * 100;
       const y = 100 - getHPct(col.count);
@@ -127,17 +129,16 @@ export default function ThongKe() {
 
         <div className="h-[90px] mt-8 flex items-end justify-around gap-2 relative z-10 border-b border-gray-200 pb-2">
           
-          {/* ĐƯỜNG NỐI SVG (HIỆU ỨNG VẼ TỪ TRÁI SANG PHẢI) */}
+          {/* ĐƯỜNG NỐI SVG SỬ DỤNG showLine ĐỂ QUẢN LÝ HIỆU ỨNG */}
           <svg 
             viewBox="0 0 100 100" 
             preserveAspectRatio="none" 
             className="absolute top-0 left-0 w-full h-[calc(100%-0.5rem)] z-0 pointer-events-none" 
             style={{ 
-              opacity: showHeights ? 1 : 0,
-              // Kéo mặt nạ che từ phải sang (100% che kín -> 0% hiện toàn bộ)
-              clipPath: showHeights ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
-              // Chạy hiệu ứng clip-path kéo dài 1 giây, trễ 0.3s để cột mọc lên trước rồi mới vẽ
-              transition: "clip-path 1s cubic-bezier(0.4, 0, 0.2, 1) 0.3s, opacity 0.3s"
+              opacity: showLine ? 1 : 0,
+              clipPath: showLine ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
+              // Khi showLine là false (ẩn), nó ẩn lập tức (none) để ko bị giật. Khi true, chạy hiệu ứng 1s
+              transition: showLine ? "clip-path 1s cubic-bezier(0.4, 0, 0.2, 1) 0.3s, opacity 0.3s" : "none" 
             }}
           >
             <polyline
@@ -147,11 +148,10 @@ export default function ThongKe() {
               strokeWidth="2"
               strokeDasharray="4 4"
               vectorEffect="non-scaling-stroke"
-              className="transition-all duration-1000"
+              // Xóa class 'transition-all' ở đây để SVG không kéo giãn mà chỉ vẽ theo clip-path
             />
           </svg>
 
-          {/* CỘT & CHẤM TRÒN */}
           {historyData.map((col) => {
             const heightPct = getHPct(col.count);
 
@@ -204,7 +204,7 @@ export default function ThongKe() {
         </button>
       </div>
 
-      {/* MÀN HÌNH LOADING LỚP PHỦ (Chỉ hiện khi tải lần đầu hoặc bấm làm mới) */}
+      {/* MÀN HÌNH LOADING LỚP PHỦ */}
       {isLoading && (
         <div className="fixed inset-0 z-[100] bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center">
           <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mb-3"></div>
@@ -215,7 +215,6 @@ export default function ThongKe() {
       {renderChart1()}
       {renderChart2()}
 
-      {/* NÚT RELOAD THỦ CÔNG */}
       <button
         onClick={() => loadData(false)}
         disabled={isLoading}
