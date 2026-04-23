@@ -1,17 +1,11 @@
 import { google } from "googleapis";
 
 export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const targetMonth = parseInt(searchParams.get("month"));
+  const targetYear = parseInt(searchParams.get("year"));
+
   try {
-    // 1. Lấy và kiểm tra tham số đầu vào
-    const { searchParams } = new URL(request.url);
-    const month = parseInt(searchParams.get("month"));
-    const year = parseInt(searchParams.get("year"));
-
-    if (!month || !year) {
-      return Response.json({ success: false, error: "Tham số không hợp lệ" }, { status: 400 });
-    }
-
-    // 2. Thiết lập kết nối Google Sheets
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -21,60 +15,90 @@ export async function GET(request) {
     });
 
     const sheets = google.sheets({ version: "v4", auth });
-    
-    // 3. Truy xuất dữ liệu từ Sheet "DATA"
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "DATA!A2:E", // Chỉ lấy đến cột E để tối ưu dung lượng tải
+      range: "DATA!A2:E", 
     });
 
     const rows = response.data.values || [];
-    
-    // 4. Khởi tạo bộ đếm (Key phải khớp 100% với tên xe trong Sheet)
-    const counts = {
+
+    // --- LOGIC 1: THỐNG KÊ TỪNG XE (THÁNG HIỆN TẠI) ---
+    // ✅ CỐ ĐỊNH 4 CỘT: Khởi tạo sẵn 4 xe dựa trên form đặt lịch của bạn
+    // Tên trong ngoặc kép phải giống Y HỆT trong file Google Sheet
+    const carStats = {
       "Xe 4 (Thái)": 0,
       "Xe 4 (Học)": 0,
       "Xe 7 (Mitsubishi)": 0,
-      "Xe 8 (Toyota)": 0
+      "Xe 8 (Toyota)": 0,
+      "Xe Khác": 0
     };
+    const colors = ["bg-blue-400", "bg-indigo-400", "bg-teal-400", "bg-emerald-400"];
 
-    // 5. Thuật toán đếm tối ưu
+    // --- LOGIC 2: THỐNG KÊ LỊCH SỬ 4 THÁNG ---
+    const historyStats = [];
+    for (let i = 3; i >= 0; i--) {
+      const d = new Date(targetYear, targetMonth - 1 - i, 1);
+      historyStats.push({
+        month: d.getMonth() + 1,
+        year: d.getFullYear(),
+        label: `Tháng ${d.getMonth() + 1}`,
+        count: 0
+      });
+    }
+
     rows.forEach(row => {
-      const dateStr = row[0]; // Cột A
-      const carType = row[4]; // Cột E
+      const dateStr = row[0];
+      const carName = row[4];
+      if (!dateStr) return;
 
-      if (dateStr && carType) {
-        // Chuẩn hóa ngày tháng (Xử lý cả dấu / và dấu -)
-        const formattedDate = dateStr.includes('/') ? dateStr.split('/').reverse().join('-') : dateStr;
-        const d = new Date(formattedDate);
-        
-        if (!isNaN(d.getTime())) {
-          if ((d.getMonth() + 1) === month && d.getFullYear() === year) {
-            const cleanType = carType.trim();
-            if (counts.hasOwnProperty(cleanType)) {
-              counts[cleanType]++;
-            }
-          }
-        }
+      const [y, m] = dateStr.split("-").map(Number);
+
+      // Tính cho biểu đồ 1
+      if (y === targetYear && m === targetMonth && carName) {
+        // Cộng dồn. Nếu xuất hiện xe lạ ngoài 4 xe trên, nó sẽ tự tạo thêm cột thứ 5
+        carStats[carName] = (carStats[carName] || 0) + 1;
       }
+
+      // Tính cho biểu đồ 2
+      historyStats.forEach(h => {
+        if (y === h.year && m === h.month) {
+          h.count++;
+        }
+      });
     });
 
-    // 6. Tính toán tỷ lệ hiển thị
-    const maxVal = Math.max(...Object.values(counts), 1);
+    // Định dạng dữ liệu trả về cho biểu đồ 1
+    const carChartData = Object.keys(carStats).map((name, idx) => {
+      // ✅ BÍ QUYẾT LÀM ĐẸP GIAO DIỆN:
+      // Rút gọn tên xe để hiển thị dưới đáy cột không bị tràn chữ
+      let shortName = name
+        .replace("Xe 7 (Mitsubishi)", "XE 7 (MIT)")
+        .replace("Xe 8 (Toyota)", "XE 8 (TOY)")
+        .toUpperCase();
+      
+      return {
+        id: idx,
+        label: shortName,
+        count: carStats[name],
+        color: colors[idx % colors.length]
+      };
+    });
 
-    const stats = Object.keys(counts).map((key, index) => ({
-      id: index + 1,
-      label: key.replace("Mitsubishi", "Mit").replace("Toyota", "Toy"), // Rút gọn label hiển thị
-      count: counts[key],
-      height: `${(counts[key] / maxVal) * 100}%`,
-      // Gán màu cố định cho từng loại xe
-      color: key.includes("4") ? (key.includes("Thái") ? "bg-blue-400" : "bg-indigo-400") : (key.includes("7") ? "bg-teal-400" : "bg-emerald-400")
+    // Định dạng dữ liệu cho biểu đồ 2
+    const formattedHistory = historyStats.map((h, idx) => ({
+      id: `h-${idx}`,
+      label: h.label,
+      count: h.count,
+      color: "bg-slate-400"
     }));
 
-    return Response.json({ success: true, data: stats });
+    return Response.json({ 
+      success: true, 
+      data: carChartData, 
+      history: formattedHistory 
+    });
 
   } catch (error) {
-    console.error("API Error:", error.message);
-    return Response.json({ success: false, error: "Lỗi kết nối dữ liệu" }, { status: 500 });
+    return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }

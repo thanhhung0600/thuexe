@@ -69,6 +69,7 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
             <option value="Xe 4 (Học)">Xe 4 chỗ (Học)</option>
             <option value="Xe 7 (Mitsubishi)">Xe 7 chỗ (Mitsubishi)</option>
             <option value="Xe 8 (Toyota)">Xe 7 chỗ (Toyota)</option>
+            <option value="Xe Khác">Xe Khác</option>
           </select>
         </div>
 
