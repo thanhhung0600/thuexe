@@ -10,9 +10,13 @@ export default function ThongKe() {
 
   const totalActivities = chartData.reduce((sum, item) => sum + item.count, 0);
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
-    setShowHeights(false);
+  const loadData = useCallback(async (isSilent = false) => {
+    // Nếu isSilent = false (load lần đầu hoặc bấm Làm mới), hiện loading và reset chiều cao
+    if (!isSilent) {
+      setIsLoading(true);
+      setShowHeights(false);
+    }
+    
     try {
       const m = currentDate.getMonth() + 1;
       const y = currentDate.getFullYear();
@@ -22,7 +26,11 @@ export default function ThongKe() {
       if (result.success) {
         setChartData(result.data);
         setHistoryData(result.history);
-        setTimeout(() => setShowHeights(true), 50);
+        
+        // Trì hoãn 100ms để trình duyệt kịp render DOM ở mức 0% rồi mới mọc lên
+        setTimeout(() => {
+          setShowHeights(true);
+        }, 100);
       }
     } catch (err) {
       console.error("UI Fetch Error:", err);
@@ -31,45 +39,50 @@ export default function ThongKe() {
     }
   }, [currentDate]);
 
+  // Hiệu ứng khi LẦN ĐẦU TỪ TAB KHÁC CHUYỂN SANG
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData(false);
+    // Hàm dọn dẹp: Đảm bảo khi rời tab, chiều cao về 0 để lần sau vào lại có hiệu ứng mọc lên
+    return () => setShowHeights(false);
+  }, []);
+
+  // Hiệu ứng KHI ĐỔI THÁNG (Tải ngầm mượt mà)
+  useEffect(() => {
+    loadData(true);
+  }, [currentDate, loadData]);
 
   const changeMonth = (offset) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1));
   };
 
   // ==========================================
-  // RENDER BIỂU ĐỒ 1 (Cột to, Scale full chiều cao, Không chấm tròn)
+  // RENDER BIỂU ĐỒ 1: THÁNG HIỆN TẠI (Scale cao, Không chấm tròn)
   // ==========================================
   const renderChart1 = () => {
-    // Tìm giá trị lớn nhất trong tháng để scale. Nếu tất cả bằng 0 thì mặc định max là 1
     const maxVal = Math.max(...chartData.map(d => d.count), 1);
 
     return (
       <div className="relative w-full bg-slate-50 border border-gray-200 rounded-2xl p-4 pt-6 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] overflow-hidden min-h-[280px]">
         <div className="absolute top-3 left-4 right-4 flex justify-between items-center z-20">
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-            Tổng hoạt động: <span className="text-blue-600 ml-1">{totalActivities} Chuyến</span>
+            Tổng: <span className="text-blue-600 ml-1">{totalActivities} Chuyến</span>
           </span>
-          <div className="w-[110px] h-[30px] bg-slate-50 border border-gray-200 rounded-full flex items-center justify-center gap-1">
-            {/* Dấu chấm tròn dùng div để tròn tuyệt đối và dễ căn chỉnh */}
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-
-            <span className="text-[12px] font-bold text-green-400 animate-pulse tracking-tight">
-              Realtime
-            </span>
+          
+          {/* Cụm Realtime */}
+          <div className="w-[70px] h-[20px] bg-slate-50 border border-gray-200 rounded-full flex items-center justify-center gap-1.5">
+            <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></div>
+            <span className="text-[10px] font-bold text-green-400 animate-pulse tracking-tight">Realtime</span>
           </div>
         </div>
 
         <div className="h-[160px] mt-8 flex items-end justify-around gap-2 relative z-10 border-b border-gray-200 pb-2">
           {chartData.map((col) => {
-            // Scale cột: Giá trị cao nhất sẽ chiếm 85% khung, giá trị 0 sẽ chiếm 4% (để nhú lên 1 xíu)
+            // Giá trị cao nhất chiếm 85%, giá trị 0 chiếm 4%
             const heightPct = Math.max((col.count / maxVal) * 85, 4);
 
             return (
               <div key={col.id} className="flex flex-col items-center justify-end h-full w-full relative z-10">
-                <span className="text-[12px] font-black text-slate-700 mb-1">{col.count}</span>
+                <span className="text-[12px] font-black text-slate-700 mb-1 transition-all duration-700">{col.count}</span>
                 <div
                   className={`w-[80%] max-w-[35px] rounded-t-xl ${col.color} shadow-sm transition-all duration-1000 cubic-bezier(0.34, 1.56, 0.64, 1)`}
                   style={{ height: showHeights ? `${heightPct}%` : "0%" }}
@@ -91,18 +104,16 @@ export default function ThongKe() {
   };
 
   // ==========================================
-  // RENDER BIỂU ĐỒ 2 (Cột nhỏ 60%, Có chấm tròn, Có line đứt nối đỉnh)
+  // RENDER BIỂU ĐỒ 2: XU HƯỚNG (Có đường nối SVG, Có chấm tròn)
   // ==========================================
   const renderChart2 = () => {
     const maxVal = Math.max(...historyData.map(d => d.count), 1);
-
-    // Hàm tính chiều cao % chung cho cả SVG và Div (Max 75% để chừa chỗ cho chấm tròn và số)
     const getHPct = (count) => Math.max((count / maxVal) * 75, 4);
-
-    // Tính toán tọa độ cho đường nối SVG nét đứt
+    
+    // Tính điểm nối cho đường nét đứt
     const points = historyData.map((col, i) => {
-      const x = ((i + 0.5) / historyData.length) * 100; // Tọa độ X ngay tâm cột
-      const y = 100 - getHPct(col.count);               // Tọa độ Y ngay đỉnh cột
+      const x = ((i + 0.5) / historyData.length) * 100;
+      const y = 100 - getHPct(col.count);
       return `${x},${y}`;
     }).join(' ');
 
@@ -115,9 +126,20 @@ export default function ThongKe() {
         </div>
 
         <div className="h-[90px] mt-8 flex items-end justify-around gap-2 relative z-10 border-b border-gray-200 pb-2">
-
-          {/* ĐƯỜNG LINE NỐI ĐỈNH (SVG) */}
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute top-0 left-0 w-full h-[calc(100%-0.5rem)] z-0 pointer-events-none transition-opacity duration-1000 delay-300" style={{ opacity: showHeights ? 1 : 0 }}>
+          
+          {/* ĐƯỜNG NỐI SVG (HIỆU ỨNG VẼ TỪ TRÁI SANG PHẢI) */}
+          <svg 
+            viewBox="0 0 100 100" 
+            preserveAspectRatio="none" 
+            className="absolute top-0 left-0 w-full h-[calc(100%-0.5rem)] z-0 pointer-events-none" 
+            style={{ 
+              opacity: showHeights ? 1 : 0,
+              // Kéo mặt nạ che từ phải sang (100% che kín -> 0% hiện toàn bộ)
+              clipPath: showHeights ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
+              // Chạy hiệu ứng clip-path kéo dài 1 giây, trễ 0.3s để cột mọc lên trước rồi mới vẽ
+              transition: "clip-path 1s cubic-bezier(0.4, 0, 0.2, 1) 0.3s, opacity 0.3s"
+            }}
+          >
             <polyline
               points={points}
               fill="none"
@@ -125,25 +147,23 @@ export default function ThongKe() {
               strokeWidth="2"
               strokeDasharray="4 4"
               vectorEffect="non-scaling-stroke"
+              className="transition-all duration-1000"
             />
           </svg>
 
-          {/* CỘT, CHẤM TRÒN VÀ SỐ */}
+          {/* CỘT & CHẤM TRÒN */}
           {historyData.map((col) => {
             const heightPct = getHPct(col.count);
 
             return (
               <div key={col.id} className="flex flex-col items-center justify-end h-full w-full relative z-10">
-                {/* 1. Số đếm trên cùng */}
-                <span className="text-[11px] font-black text-slate-700 mb-0.5">{col.count}</span>
-
-                {/* 2. Chấm tròn nằm dưới số (Dùng HTML Div để tròn xoe không bị méo) */}
+                <span className="text-[11px] font-black text-slate-700 mb-0.5 transition-all duration-700">{col.count}</span>
+                
                 <div
                   className="w-2.5 h-2.5 bg-blue-500 rounded-full border border-white shadow-sm z-20 mb-[-3px] transition-all duration-1000 delay-100"
                   style={{ transform: showHeights ? "scale(1)" : "scale(0)" }}
                 ></div>
-
-                {/* 3. Cột biểu đồ (Rộng 45% ~ Khoảng 60% so với biểu đồ 1) */}
+                
                 <div
                   className={`w-[45%] max-w-[18px] rounded-t-xl ${col.color} shadow-sm transition-all duration-1000 cubic-bezier(0.34, 1.56, 0.64, 1) z-10`}
                   style={{ height: showHeights ? `${heightPct}%` : "0%" }}
@@ -184,6 +204,7 @@ export default function ThongKe() {
         </button>
       </div>
 
+      {/* MÀN HÌNH LOADING LỚP PHỦ (Chỉ hiện khi tải lần đầu hoặc bấm làm mới) */}
       {isLoading && (
         <div className="fixed inset-0 z-[100] bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center">
           <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mb-3"></div>
@@ -191,13 +212,12 @@ export default function ThongKe() {
         </div>
       )}
 
-      {/* Gọi hàm vẽ 2 biểu đồ */}
       {renderChart1()}
       {renderChart2()}
 
-      {/* NÚT RELOAD */}
+      {/* NÚT RELOAD THỦ CÔNG */}
       <button
-        onClick={loadData}
+        onClick={() => loadData(false)}
         disabled={isLoading}
         className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-blue-600 font-black uppercase text-[12px] tracking-widest py-4 rounded-2xl shadow-sm active:scale-95 transition-all disabled:opacity-50 mt-1"
       >
