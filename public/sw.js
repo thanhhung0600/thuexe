@@ -1,26 +1,25 @@
-// Sự kiện lắng nghe thông báo đẩy (Push Notification)
-self.addEventListener('push', function(event) {
-  if (event.data) {
-    const data = event.data.json();
-    
-    const options = {
-      body: data.body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      vibrate: [200, 100, 200], // Rung điện thoại
-      data: { url: data.url || '/' } // Đường dẫn khi bấm vào thông báo
-    };
+importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js');
 
-    event.waitUntil(
-      self.registration.showNotification(data.title, options)
-    );
-  }
+// Cấu hình Firebase của bạn
+firebase.initializeApp({
+  apiKey: "AIzaSyCiKf5nV6VBEoNGVNAQ3CHyqd2e51AkTg4",
+  authDomain: "quanlyxe-5f578.firebaseapp.com",
+  projectId: "quanlyxe-5f578",
+  storageBucket: "quanlyxe-5f578.firebasestorage.app",
+  messagingSenderId: "854321564800",
+  appId: "1:854321564800:web:427c45569c7e710231aa65"
 });
 
-// Sự kiện khi người dùng bấm vào thông báo
-self.addEventListener('notificationclick', function(event) {
-  event.notification.close();
-  event.waitUntil(
-    clients.openWindow(event.notification.data.url)
-  );
+const messaging = firebase.messaging();
+
+// Lắng nghe thông báo khi App đang chạy ngầm hoặc đã tắt
+messaging.onBackgroundMessage((payload) => {
+  const notificationTitle = payload.notification.title;
+  const notificationOptions = {
+    body: payload.notification.body,
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+  };
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });
