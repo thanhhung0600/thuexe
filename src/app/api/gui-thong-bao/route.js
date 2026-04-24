@@ -15,9 +15,8 @@ if (!admin.apps.length) {
 
 // 2. HÀM LẤY NGÀY MAI (Chuẩn múi giờ Việt Nam)
 const getTomorrowDateString = () => {
-  // Ép lấy giờ Việt Nam hiện tại (Tránh việc Vercel dùng giờ Mỹ)
   const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Ho_Chi_Minh"}));
-  now.setDate(now.getDate() + 1); // Cộng thêm 1 ngày
+  now.setDate(now.getDate() + 1); 
   
   const dd = String(now.getDate()).padStart(2, '0');
   const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -25,17 +24,31 @@ const getTomorrowDateString = () => {
   return `${dd}/${mm}/${yyyy}`; 
 };
 
-// Hàm chuẩn hóa ngày trong Sheet (Xử lý dư dấu cách hoặc thiếu số 0)
+// ĐÃ SỬA: Hàm chuẩn hóa ngày siêu thông minh (Xử lý được cả 2026-04-26 và 26/4/2026)
 const normalizeDate = (dateStr) => {
   if (!dateStr) return "";
   let cleanDate = String(dateStr).trim();
-  const parts = cleanDate.split('/');
-  if (parts.length === 3) {
-    const d = parts[0].padStart(2, '0');
-    const m = parts[1].padStart(2, '0');
-    const y = parts[2];
-    return `${d}/${m}/${y}`;
+
+  // Nếu Sheet dùng dấu gạch ngang (VD: 2026-04-26) -> Đổi thành 26/04/2026
+  if (cleanDate.includes('-')) {
+    const parts = cleanDate.split('-');
+    if (parts.length === 3) {
+      // parts[0] = Năm, parts[1] = Tháng, parts[2] = Ngày
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
   }
+
+  // Nếu Sheet dùng dấu xuyệt (VD: 26/4/2026) -> Đổi thành 26/04/2026
+  if (cleanDate.includes('/')) {
+    const parts = cleanDate.split('/');
+    if (parts.length === 3) {
+      const d = parts[0].padStart(2, '0');
+      const m = parts[1].padStart(2, '0');
+      const y = parts[2];
+      return `${d}/${m}/${y}`;
+    }
+  }
+
   return cleanDate;
 };
 
@@ -57,11 +70,11 @@ export async function GET(request) {
     });
 
     const rows = response.data.values || [];
-    const tomorrowStr = getTomorrowDateString(); // Ngày mai chuẩn: VD "26/04/2026"
+    const tomorrowStr = getTomorrowDateString(); 
 
-    // 4. LỌC TÌM CÁC CHUYẾN ĐI (Có tính năng dọn dẹp lỗi gõ sai)
+    // 4. LỌC TÌM CÁC CHUYẾN ĐI
     const tomorrowTrips = rows.filter(row => {
-      const tripDate = normalizeDate(row[0]); 
+      const tripDate = normalizeDate(row[0]); // Chạy qua bộ dịch thuật
       return tripDate === tomorrowStr;
     });
 
@@ -88,7 +101,7 @@ export async function GET(request) {
         title: `Lịch trình ngày mai (${tomorrowStr}) 🗓️`,
         body: notificationBody,
       },
-      // ĐẢM BẢO CHỖ NÀY LÀ MÃ TOKEN CỦA BẠN (Đừng để mất dấu ngoặc kép nhé)
+      // ⚠️ QUAN TRỌNG: Hãy dán lại đoạn Token của điện thoại bạn vào đây nhé!
       token: "cwmFe0KjsJaUVZq770hTKp:APA91bHgc3Q2N8WvRyKDUkA3rsAkUxEvO9-FcPc23zZ9OMZfCERO1NpGltRy9aIgqN4AcDwTncGejw6Jb_iS4VDBMsYkBhJtkr9_J4f7Agamk8Wna7fpsNU", 
     };
 
