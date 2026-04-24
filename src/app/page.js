@@ -7,7 +7,7 @@ import XemLich from "../components/xemlich";
 import ToastContainer from "../components/ToastContainer";
 import NavigationTabs from "../components/NavigationTabs";
 
-// THÊM: Import hàm xin quyền thông báo từ file firebase.js
+// Import hàm xin quyền thông báo từ file firebase.js
 import { requestForToken } from "../lib/firebase";
 
 export default function Home() {
@@ -15,6 +15,9 @@ export default function Home() {
   const [toasts, setToasts] = useState([]);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // State quản lý việc đóng/mở menu cài đặt trượt từ dưới lên
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     tenKhach: "", 
@@ -113,10 +116,9 @@ export default function Home() {
     }
   };
 
-  // ĐÃ SỬA: Hàm xử lý bắt bệnh lỗi xin quyền
   const handleEnableNotification = async () => {
     try {
-      addToast("Đang kết nối để xin quyền...", "success"); // Báo hiệu đang chạy
+      addToast("Đang kết nối để xin quyền...", "success"); 
       const token = await requestForToken();
       if (token) {
         prompt("Đã bật thông báo thành công! Đây là mã Token của điện thoại bạn (Hãy copy nó):", token);
@@ -125,7 +127,6 @@ export default function Home() {
       }
     } catch (error) {
       console.error(error);
-      // Hiển thị trực tiếp nội dung lỗi ra màn hình để chúng ta biết bị kẹt ở đâu
       addToast(`Lỗi: ${error.message}`, "error"); 
     }
   };
@@ -134,33 +135,13 @@ export default function Home() {
     <main className="min-h-[100dvh] w-full bg-[#bac4e5] flex items-center justify-center p-4 font-sans relative overflow-hidden flex-col">
       <ToastContainer toasts={toasts} />
 
+      {/* --- PHẦN NỘI DUNG CHÍNH --- */}
       <div className="w-full max-w-md relative">
-        
-        {/* --- ĐÃ SỬA: Xếp Tabs và Nút Chuông lên cùng 1 dòng --- */}
-        <div className="relative z-10 -mb-[1px] flex items-end justify-between gap-2">
-          
-          {/* Khu vực Tabs chiếm phần lớn chiều rộng */}
-          <div className="flex-1 overflow-x-auto no-scrollbar">
-            <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-          </div>
-
-          {/* Nút Chuông Thông Báo được thiết kế lại thành hình vuông bo góc nằm bên phải */}
-          <button
-            onClick={handleEnableNotification}
-            className="mb-[1px] h-10 w-10 shrink-0 bg-white/80 backdrop-blur-md shadow-sm border-t border-l border-r border-white/60 rounded-t-xl text-blue-600 hover:text-blue-800 hover:bg-white active:scale-95 transition-all flex items-center justify-center relative group"
-            title="Đăng ký nhận thông báo"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            
-            {/* Hiệu ứng chấm đỏ thông báo nhỏ góc trên */}
-            <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-          </button>
+        <div className="relative z-10 -mb-[1px]">
+          <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
-        {/* ---------------------------------------------------- */}
 
-        <div className="bg-white shadow-2xl p-6 sm:p-8 border border-white rounded-b-[1.5rem] rounded-tl-[1.5rem] relative z-0 transition-all duration-500 overflow-hidden">
+        <div className="bg-white shadow-2xl p-6 sm:p-8 border border-white rounded-[1.5rem] relative z-0 transition-all duration-500 overflow-hidden pb-12">
           {activeTab === "dat-lich" && (
             <DatLich 
               formData={formData} 
@@ -170,10 +151,79 @@ export default function Home() {
               isSubmitting={isSubmitting} 
             />
           )}
-          
           {activeTab === "xem-lich" && <XemLich />}
           {activeTab === "thong-ke" && <ThongKe />}
           {activeTab === "tim-kiem" && <TimKiem />}
+        </div>
+      </div>
+
+      {/* --- NÚT BÁNH RĂNG (Góc dưới bên phải) --- */}
+      <button
+        onClick={() => setIsSettingsOpen(true)}
+        className="fixed bottom-4 right-4 z-40 p-2.5 bg-white/40 backdrop-blur-md border border-white/50 shadow-sm rounded-full text-slate-600 opacity-50 hover:opacity-100 hover:bg-white/70 hover:scale-105 active:scale-95 transition-all duration-300"
+        aria-label="Mở cài đặt"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+
+      {/* --- MENU TRƯỢT TỪ DƯỚI LÊN (BOTTOM SHEET) --- */}
+      {/* 1. Lớp phủ đen mờ */}
+      <div 
+        className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isSettingsOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setIsSettingsOpen(false)}
+      ></div>
+
+      {/* 2. Bảng Menu trượt */}
+      <div 
+        className={`fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[70] transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${isSettingsOpen ? 'translate-y-0' : 'translate-y-full'}`}
+      >
+        {/* Nút gạt nhỏ (Handle) để giả lập cảm giác vuốt của iOS */}
+        <div className="w-full flex justify-center pt-3 pb-1 cursor-pointer" onClick={() => setIsSettingsOpen(false)}>
+          <div className="w-12 h-1.5 bg-slate-200 rounded-full"></div>
+        </div>
+
+        <div className="p-6 pt-2">
+          {/* Header của Menu */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-black text-slate-800">Cài đặt</h2>
+            <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+              <svg className="w-5 h-5 text-slate-400 hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="space-y-4 mb-6">
+            {/* Mục Cài đặt Thông báo */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </div>
+                <span className="font-bold text-slate-700">Thông báo đẩy</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-4 ml-[44px]">Nhận nhắc nhở lịch trình xe vào lúc 20:00 tối mỗi ngày.</p>
+              
+              <button 
+                onClick={() => {
+                  handleEnableNotification();
+                  setIsSettingsOpen(false); // Tự động đóng menu sau khi bấm để gọn gàng
+                }}
+                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all"
+              >
+                Kích hoạt thông báo
+              </button>
+            </div>
+          </div>
+          
+          <div className="text-center pb-4">
+             <p className="text-[10px] text-slate-400 uppercase tracking-widest">Phiên bản 2.0.1</p>
+          </div>
         </div>
       </div>
 

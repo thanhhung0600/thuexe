@@ -33,10 +33,10 @@ export default function TimKiem() {
   };
 
   return (
-    <div className="flex flex-col gap-5 animate-fade-in w-full text-slate-800 pb-2">
+    <div className="flex flex-col animate-fade-in w-full text-slate-800">
       
       {/* 1. KHUNG TÌM KIẾM */}
-      <form onSubmit={handleSearch} className="flex flex-col gap-4">
+      <form onSubmit={handleSearch} className="flex flex-col gap-4 mb-4 mt-2">
         
         {/* Bộ lọc loại tìm kiếm (Chips) */}
         <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-gray-200 shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]">
@@ -55,7 +55,7 @@ export default function TimKiem() {
               className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 ${
                 searchType === type.id 
                   ? "bg-white text-blue-600 shadow-sm border border-gray-100 scale-[1.02]" 
-                  : "text-gray-400 active:bg-gray-100 opacity-70"
+                  : "text-gray-400 active:bg-gray-100 opacity-70 hover:opacity-100"
               }`}
             >
               {type.label}
@@ -99,11 +99,10 @@ export default function TimKiem() {
             )}
           </div>
 
-          {/* NÚT THỰC HIỆN TÌM KIẾM (Ô VUÔNG CHỨA ICON) */}
+          {/* NÚT THỰC HIỆN TÌM KIẾM */}
           <button
             type="submit"
             disabled={isLoading || !searchTerm.trim()}
-            // Thay px-6 thành w-[56px] để tạo thành ô vuông hoàn hảo với h-[56px]
             className={`w-[45px] h-[45px] rounded-full shadow-sm transition-all flex items-center justify-center shrink-0
               ${isLoading || !searchTerm.trim() 
                 ? 'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-100' 
@@ -113,7 +112,6 @@ export default function TimKiem() {
             {isLoading ? (
               <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
             ) : (
-              // Icon Gửi / Tìm kiếm (Tạo cảm giác như nút 'Go' trên bàn phím)
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -122,16 +120,24 @@ export default function TimKiem() {
         </div>
       </form>
 
-      {/* 2. KHU VỰC KẾT QUẢ TÌM KIẾM */}
-      <div className="mt-[-5] h-[380px] overflow-y-auto no-scrollbar relative border border-gray-300 bg-slate-50 rounded-2xl bg-gray-50/30 p-1">
+      {/* 2. KHU VỰC KẾT QUẢ TÌM KIẾM (Đã sửa lại padding và container để thẻ bung rộng 100% giống tab Xem Lịch) */}
+      <div className="mx-[-17px] h-[420px] overflow-x-hidden overflow-y-auto bg-gray-50/50 rounded-2xl shadow-inner border border-gray-100 no-scrollbar relative mb-2">
         
         {/* Trường hợp chưa nhập dữ liệu */}
         {results === null && !isLoading && (
           <div className="flex flex-col items-center justify-center h-full opacity-40">
-            <div className="text-5xl mb-4">🔎</div>
+            <div className="text-5xl mb-4 grayscale opacity-50">🔎</div>
             <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest text-center leading-loose">
               Chọn tiêu chí và nhập từ khóa<br/>để bắt đầu tra cứu dữ liệu
             </p>
+          </div>
+        )}
+
+        {/* Trường hợp đang quét */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div>
+            <div className="text-[12px] font-black text-blue-600 uppercase tracking-[0.2em] animate-pulse">Đang quét dữ liệu</div>
           </div>
         )}
 
@@ -147,13 +153,15 @@ export default function TimKiem() {
 
         {/* Trường hợp có kết quả */}
         {results !== null && results.length > 0 && !isLoading && (
-          <div className="animate-fade-in px-1">
-            <div className="mb-1 flex items-center justify-between px-2">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+          <div className="animate-fade-in">
+            {/* Header thông báo số lượng - Có padding nhẹ để không bị dính sát lề */}
+            <div className="mb-2 flex items-center justify-between px-4 pt-4">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                 Đã tìm thấy: <span className="text-blue-600 ml-1">{results.length} kết quả</span>
               </span>
             </div>
             
+            {/* Gọi Component Thẻ - Bỏ padding bọc ngoài để thẻ tự do bung rộng */}
             <LichTrinhChiTiet data={results} showDate={true} />
             
           </div>
