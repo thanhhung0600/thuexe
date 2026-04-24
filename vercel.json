@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/gui-thong-bao",
-      "schedule": "0 0,4,12 * * *"
+      "schedule": "0 13 * * *"
     }
   ]
 }
