@@ -135,11 +135,32 @@ export default function Home() {
       <ToastContainer toasts={toasts} />
 
       <div className="w-full max-w-md relative">
-        <div className="relative z-10 -mb-[1px]">
-          <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-        </div>
+        
+        {/* --- ĐÃ SỬA: Xếp Tabs và Nút Chuông lên cùng 1 dòng --- */}
+        <div className="relative z-10 -mb-[1px] flex items-end justify-between gap-2">
+          
+          {/* Khu vực Tabs chiếm phần lớn chiều rộng */}
+          <div className="flex-1 overflow-x-auto no-scrollbar">
+            <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+          </div>
 
-        <div className="bg-white shadow-2xl p-6 sm:p-8 border border-white rounded-[1.5rem] relative z-0 transition-all duration-500 overflow-hidden">
+          {/* Nút Chuông Thông Báo được thiết kế lại thành hình vuông bo góc nằm bên phải */}
+          <button
+            onClick={handleEnableNotification}
+            className="mb-[1px] h-10 w-10 shrink-0 bg-white/80 backdrop-blur-md shadow-sm border-t border-l border-r border-white/60 rounded-t-xl text-blue-600 hover:text-blue-800 hover:bg-white active:scale-95 transition-all flex items-center justify-center relative group"
+            title="Đăng ký nhận thông báo"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            
+            {/* Hiệu ứng chấm đỏ thông báo nhỏ góc trên */}
+            <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+          </button>
+        </div>
+        {/* ---------------------------------------------------- */}
+
+        <div className="bg-white shadow-2xl p-6 sm:p-8 border border-white rounded-b-[1.5rem] rounded-tl-[1.5rem] relative z-0 transition-all duration-500 overflow-hidden">
           {activeTab === "dat-lich" && (
             <DatLich 
               formData={formData} 
@@ -150,30 +171,10 @@ export default function Home() {
             />
           )}
           
-          {activeTab === "xem-lich" && (
-            <XemLich />
-          )}
-
-          {activeTab === "thong-ke" && (
-            <ThongKe />
-          )}
-
-          {activeTab === "tim-kiem" && (
-            <TimKiem />
-          )}
+          {activeTab === "xem-lich" && <XemLich />}
+          {activeTab === "thong-ke" && <ThongKe />}
+          {activeTab === "tim-kiem" && <TimKiem />}
         </div>
-
-        {/* Nút bấm Bật Thông Báo & Lấy Token */}
-        <button
-          onClick={handleEnableNotification}
-          className="w-full mt-4 bg-white/40 border border-white/60 text-slate-700 font-black py-4 rounded-2xl shadow-sm hover:bg-white/60 active:scale-95 transition-all text-[12px] uppercase tracking-widest flex items-center justify-center gap-2 backdrop-blur-sm"
-        >
-          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          Lấy mã thông báo điện thoại
-        </button>
-
       </div>
 
       <style jsx global>{`
