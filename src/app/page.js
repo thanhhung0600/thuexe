@@ -113,19 +113,20 @@ export default function Home() {
     }
   };
 
-  // THÊM: Hàm xử lý khi bấm nút "Bật Thông Báo"
+  // ĐÃ SỬA: Hàm xử lý bắt bệnh lỗi xin quyền
   const handleEnableNotification = async () => {
     try {
+      addToast("Đang kết nối để xin quyền...", "success"); // Báo hiệu đang chạy
       const token = await requestForToken();
       if (token) {
-        // Dùng lệnh prompt để hiển thị hộp thoại cho phép bạn COPY mã Token dễ dàng
         prompt("Đã bật thông báo thành công! Đây là mã Token của điện thoại bạn (Hãy copy nó):", token);
       } else {
-        addToast("Bạn đã từ chối nhận thông báo hoặc trình duyệt không hỗ trợ.", "error");
+        addToast("Từ chối nhận thông báo hoặc không hỗ trợ.", "error");
       }
     } catch (error) {
       console.error(error);
-      addToast("Có lỗi xảy ra khi xin quyền thông báo.", "error");
+      // Hiển thị trực tiếp nội dung lỗi ra màn hình để chúng ta biết bị kẹt ở đâu
+      addToast(`Lỗi: ${error.message}`, "error"); 
     }
   };
 
@@ -162,7 +163,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* THÊM: Nút bấm Bật Thông Báo & Lấy Token */}
+        {/* Nút bấm Bật Thông Báo & Lấy Token */}
         <button
           onClick={handleEnableNotification}
           className="w-full mt-4 bg-white/40 border border-white/60 text-slate-700 font-black py-4 rounded-2xl shadow-sm hover:bg-white/60 active:scale-95 transition-all text-[12px] uppercase tracking-widest flex items-center justify-center gap-2 backdrop-blur-sm"
