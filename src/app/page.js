@@ -16,28 +16,31 @@ export default function Home() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // State quản lý việc đóng/mở menu cài đặt trượt từ dưới lên
+  // State quản lý việc đóng/mở menu cài đặt
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  // State lưu trữ chế độ mặc định hiện tại (để hiển thị trong menu)
+  // 1. State Chế độ xem mặc định (Ngày/Tuần)
   const [defaultView, setDefaultView] = useState("day");
 
-  // Kiểm tra lựa chọn đã lưu khi mở App
-  useEffect(() => {
-    const saved = localStorage.getItem("defaultViewMode") || "day";
-    setDefaultView(saved);
-  }, []);
+  // 2. State quản lý 3 khung giờ thông báo cố định
+  const [notis, setNotis] = useState([
+    { id: 1, label: "Sáng (07:00)", enabled: false },
+    { id: 2, label: "Trưa (11:00)", enabled: false },
+    { id: 3, label: "Tối (19:00)", enabled: false },
+  ]);
 
-  const [formData, setFormData] = useState({
-    tenKhach: "", 
-    sdt: "", 
-    loaiXe: "", 
-    taiXe: "",
-    ngayThue: "", 
-    gioThue: "", 
-    gia: "", 
-    ghiChu: ""
-  });
+  // Kiểm tra lựa chọn đã lưu khi vừa mở App
+  useEffect(() => {
+    // Load chế độ xem (Ngày/Tuần)
+    const savedView = localStorage.getItem("defaultViewMode") || "day";
+    setDefaultView(savedView);
+
+    // Load trạng thái bật/tắt thông báo
+    const savedNotis = localStorage.getItem("notiSettings");
+    if (savedNotis) {
+      setNotis(JSON.parse(savedNotis));
+    }
+  }, []);
 
   const addToast = (message, type = "error") => {
     const id = Date.now();
@@ -47,18 +50,29 @@ export default function Home() {
     }, 3000);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: false });
-    }
-  };
-
   const handleSaveDefaultView = (mode) => {
     localStorage.setItem("defaultViewMode", mode);
     setDefaultView(mode);
     addToast(`Đã lưu mặc định: Xem theo ${mode === 'day' ? 'Ngày' : 'Tuần'}`, "success");
+  };
+
+  // Hàm bật/tắt thông báo từng giờ
+  const toggleNoti = (id) => {
+    const newNotis = notis.map(n => n.id === id ? { ...n, enabled: !n.enabled } : n);
+    setNotis(newNotis);
+    localStorage.setItem("notiSettings", JSON.stringify(newNotis));
+    addToast(`Đã ${newNotis.find(n => n.id === id).enabled ? 'bật' : 'tắt'} thông báo khung giờ này`, "success");
+  };
+
+  const [formData, setFormData] = useState({
+    tenKhach: "", sdt: "", loaiXe: "", taiXe: "",
+    ngayThue: "", gioThue: "", gia: "", ghiChu: ""
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (errors[name]) setErrors({ ...errors, [name]: false });
   };
 
   const handleSubmit = async (e) => {
@@ -68,9 +82,7 @@ export default function Home() {
     const requiredFields = ["tenKhach", "loaiXe", "ngayThue"];
     let newErrors = {};
     requiredFields.forEach(field => {
-      if (!formData[field] || formData[field].trim() === "") {
-        newErrors[field] = true;
-      }
+      if (!formData[field] || formData[field].trim() === "") newErrors[field] = true;
     });
 
     if (Object.keys(newErrors).length > 0) {
@@ -82,26 +94,17 @@ export default function Home() {
     setIsSubmitting(true);
     addToast("Đang lưu thông tin...", "success");
 
-    let thuTieuDien = "";
-    if (formData.ngayThue) {
-      const dateObj = new Date(formData.ngayThue);
-      const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-      thuTieuDien = days[dateObj.getDay()];
-    }
-
-    const payload = {
-      ngay: formData.ngayThue,       
-      thu: thuTieuDien,              
-      tenKhachHang: formData.tenKhach, 
-      soDienThoai: formData.sdt,     
-      loaiXe: formData.loaiXe,       
-      taiXe: formData.taiXe,         
-      gio: formData.gioThue,         
-      gia: formData.gia,             
-      ghiChu: formData.ghiChu        
-    };
-
     try {
+      const dateObj = new Date(formData.ngayThue);
+      const thu = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][dateObj.getDay()];
+
+      const payload = {
+        ngay: formData.ngayThue, thu,
+        tenKhachHang: formData.tenKhach, soDienThoai: formData.sdt,
+        loaiXe: formData.loaiXe, taiXe: formData.taiXe,
+        gio: formData.gioThue, gia: formData.gia, ghiChu: formData.ghiChu
+      };
+
       const response = await fetch('/api/dat-lich', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,15 +114,11 @@ export default function Home() {
       const result = await response.json();
       if (result.success) {
         addToast("Lưu thành công!", "success");
-        setFormData({
-          tenKhach: "", sdt: "", loaiXe: "", taiXe: "",
-          ngayThue: "", gioThue: "", gia: "", ghiChu: ""
-        });
+        setFormData({ tenKhach: "", sdt: "", loaiXe: "", taiXe: "", ngayThue: "", gioThue: "", gia: "", ghiChu: "" });
       } else {
-        throw new Error(result.error || "Lỗi không xác định từ Server");
+        throw new Error(result.error);
       }
     } catch (error) {
-      console.error("Lỗi gửi dữ liệu:", error);
       addToast("Lỗi: " + error.message, "error");
     } finally {
       setIsSubmitting(false);
@@ -136,7 +135,6 @@ export default function Home() {
         addToast("Từ chối nhận thông báo hoặc không hỗ trợ.", "error");
       }
     } catch (error) {
-      console.error(error);
       addToast(`Lỗi: ${error.message}`, "error"); 
     }
   };
@@ -152,13 +150,7 @@ export default function Home() {
 
         <div className="bg-white shadow-2xl p-6 sm:p-8 border border-white rounded-[1.5rem] relative z-0 transition-all duration-500 overflow-hidden pb-12">
           {activeTab === "dat-lich" && (
-            <DatLich 
-              formData={formData} 
-              handleChange={handleChange} 
-              handleSubmit={handleSubmit} 
-              errors={errors}
-              isSubmitting={isSubmitting} 
-            />
+            <DatLich formData={formData} handleChange={handleChange} handleSubmit={handleSubmit} errors={errors} isSubmitting={isSubmitting} />
           )}
           {activeTab === "xem-lich" && <XemLich />}
           {activeTab === "thong-ke" && <ThongKe />}
@@ -177,14 +169,14 @@ export default function Home() {
         </svg>
       </button>
 
-      {/* --- MENU TRƯỢT TỪ DƯỚI LÊN --- */}
+      {/* --- MENU TRƯỢT (BOTTOM SHEET) --- */}
       <div 
         className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isSettingsOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsSettingsOpen(false)}
       ></div>
 
       <div 
-        className={`fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[70] transform transition-transform duration-300 ${isSettingsOpen ? 'translate-y-0' : 'translate-y-full'}`}
+        className={`fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-white rounded-t-3xl shadow-2xl z-[70] transform transition-transform duration-300 ${isSettingsOpen ? 'translate-y-0' : 'translate-y-full'}`}
       >
         <div className="w-full flex justify-center pt-3 pb-1 cursor-pointer" onClick={() => setIsSettingsOpen(false)}>
           <div className="w-12 h-1.5 bg-slate-200 rounded-full"></div>
@@ -193,30 +185,44 @@ export default function Home() {
         <div className="p-6 pt-2">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-black text-slate-800">Cài đặt</h2>
-            <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-slate-100 rounded-full">
+            <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
               <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
           <div className="space-y-4 mb-6">
-            {/* Mục Thông báo đẩy */}
+            {/* 1. Bật/Tắt Thông báo theo giờ cố định */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                 </div>
-                <span className="font-bold text-slate-700">Thông báo đẩy</span>
+                <span className="font-bold text-slate-700">Thông báo nhắc lịch</span>
               </div>
-              <p className="text-[11px] text-slate-500 mb-4 ml-10 leading-relaxed">Tự động nhắc nhở lịch trình xe vào lúc 20:00 tối mỗi ngày.</p>
+              
+              <div className="space-y-3">
+                {notis.map((noti) => (
+                  <div key={noti.id} className="flex items-center justify-between bg-white p-3 px-4 rounded-xl border border-slate-200/60 shadow-sm">
+                    <span className="font-bold text-slate-600 text-sm">{noti.label}</span>
+                    <button 
+                      onClick={() => toggleNoti(noti.id)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${noti.enabled ? 'bg-blue-500' : 'bg-slate-300'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${noti.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
               <button 
                 onClick={() => { handleEnableNotification(); setIsSettingsOpen(false); }}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all"
+                className="w-full mt-4 bg-slate-800 text-white py-3 rounded-xl font-bold text-[11px] uppercase tracking-widest shadow-md active:scale-95 transition-all"
               >
-                Kích hoạt thông báo
+                Kích hoạt / Lấy Token
               </button>
             </div>
 
-            {/* Mục Chế độ xem mặc định */}
+            {/* 2. Chế độ xem mặc định */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div className="flex items-center gap-3 mb-3">
                 <div className="bg-purple-100 p-2 rounded-lg text-purple-600">
@@ -224,7 +230,6 @@ export default function Home() {
                 </div>
                 <span className="font-bold text-slate-700">Chế độ xem mặc định</span>
               </div>
-              
               <div className="flex bg-white p-1 rounded-xl border border-slate-200 gap-1">
                 <button 
                   onClick={() => handleSaveDefaultView("day")}
@@ -239,17 +244,14 @@ export default function Home() {
                   Theo Tuần
                 </button>
               </div>
-              <p className="text-[9px] text-slate-400 mt-2 text-center italic">* Lựa chọn sẽ áp dụng khi bạn mở lại App lần sau</p>
             </div>
           </div>
           
-          <div className="text-center pb-4 text-[10px] text-slate-300 uppercase tracking-widest">Phiên bản 2.0.1</div>
+          <div className="text-center pb-4 text-[10px] text-slate-300 uppercase tracking-widest">Phiên bản 2.0.2</div>
         </div>
       </div>
 
       <style jsx global>{`
-        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .animate-slide-down { animation: slideDown 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
       `}</style>

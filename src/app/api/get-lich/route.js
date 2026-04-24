@@ -7,12 +7,13 @@ export async function GET() {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
         private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       },
-      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+      // Chuyển sang dùng scope đầy đủ để linh hoạt hơn (hoặc giữ readonly nếu chỉ đọc)
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
 
     const sheets = google.sheets({ version: "v4", auth });
     
-    // Đọc dữ liệu từ Sheet DATA (Lấy từ cột A đến J theo đúng cấu trúc của bạn)
+    // 1. Đọc dữ liệu từ Sheet DATA
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: "DATA!A2:J", 
@@ -20,21 +21,47 @@ export async function GET() {
 
     const rows = response.data.values || [];
     
-    // Map dữ liệu xuất ra ĐÚNG CHUẨN tên biến của LichTrinhChiTiet.js
-    const formattedData = rows.map(row => ({
-      ngày: row[0] || "",        // Cột A (Index 0) - Dùng cho xemlich.js lọc ngày
-      tenKhach: row[2] || "",    // Cột C (Index 2) - Khớp với item.tenKhach
-      sdt: row[3] || "",         // Cột D (Index 3) - Khớp với item.sdt
-      label: row[4] || "",       // Cột E (Index 4) - Khớp với item.label (Xe)
-      taiXe: row[5] || "",       // Cột F (Index 5) - Khớp với item.taiXe
-      time: row[6] || "",        // Cột G (Index 6) - Khớp với item.time (Giờ)
-      gia: row[7] || "",         // Cột H (Index 7) - Khớp với item.gia
-      ghiChu: row[8] || ""       // Cột I (Index 8) - Khớp với item.ghiChu
-    }));
+    /**
+     * 2. Map dữ liệu và gán rowId
+     * Quan trọng: Chúng ta dùng index của mảng gốc để rowId luôn khớp với dòng trên Sheet
+     * index 0 tương ứng dòng 2 trên Google Sheet
+     */
+    const formattedData = rows
+      .map((row, index) => {
+        // Nếu dòng hoàn toàn trống thì bỏ qua (kiểm tra cột ngày và tên khách)
+        if (!row[0] && !row[2]) return null;
 
-    return Response.json(formattedData);
+        return {
+          rowId: index + 2, // Địa chỉ dòng thực tế trên Sheet để Xóa/Sửa
+          ngày: row[0] || "",        
+          tenKhach: row[2] || "",    
+          sdt: row[3] || "",         
+          label: row[4] || "",       
+          taiXe: row[5] || "",       
+          time: row[6] || "",        
+          gia: row[7] || "",         
+          ghiChu: row[8] || ""       
+        };
+      })
+      .filter(item => item !== null); // Loại bỏ các dòng trống đã lọc ở trên
+
+    // 3. Trả về Response kèm Header chống Cache triệt để
+    return new Response(JSON.stringify(formattedData), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      },
+    });
+
   } catch (error) {
     console.error("Lỗi API GetLich:", error);
-    return Response.json({ error: "Không thể lấy dữ liệu" }, { status: 500 });
+    return new Response(JSON.stringify({ error: "Không thể lấy dữ liệu" }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
