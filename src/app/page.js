@@ -1,7 +1,7 @@
 "use client";
 import ThongKe from "../components/thongke";
 import TimKiem from "../components/timkiem";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DatLich from "../components/datlich";
 import XemLich from "../components/xemlich";
 import ToastContainer from "../components/ToastContainer";
@@ -11,7 +11,7 @@ import NavigationTabs from "../components/NavigationTabs";
 import { requestForToken } from "../lib/firebase";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("dat-lich");
+  const [activeTab, setActiveTab] = useState("xem-lich");
   const [toasts, setToasts] = useState([]);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,6 +19,15 @@ export default function Home() {
   // State quản lý việc đóng/mở menu cài đặt trượt từ dưới lên
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
+  // State lưu trữ chế độ mặc định hiện tại (để hiển thị trong menu)
+  const [defaultView, setDefaultView] = useState("day");
+
+  // Kiểm tra lựa chọn đã lưu khi mở App
+  useEffect(() => {
+    const saved = localStorage.getItem("defaultViewMode") || "day";
+    setDefaultView(saved);
+  }, []);
+
   const [formData, setFormData] = useState({
     tenKhach: "", 
     sdt: "", 
@@ -46,9 +55,14 @@ export default function Home() {
     }
   };
 
+  const handleSaveDefaultView = (mode) => {
+    localStorage.setItem("defaultViewMode", mode);
+    setDefaultView(mode);
+    addToast(`Đã lưu mặc định: Xem theo ${mode === 'day' ? 'Ngày' : 'Tuần'}`, "success");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (isSubmitting) return;
 
     const requiredFields = ["tenKhach", "loaiXe", "ngayThue"];
@@ -90,14 +104,11 @@ export default function Home() {
     try {
       const response = await fetch('/api/dat-lich', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       const result = await response.json();
-
       if (result.success) {
         addToast("Lưu thành công!", "success");
         setFormData({
@@ -107,7 +118,6 @@ export default function Home() {
       } else {
         throw new Error(result.error || "Lỗi không xác định từ Server");
       }
-
     } catch (error) {
       console.error("Lỗi gửi dữ liệu:", error);
       addToast("Lỗi: " + error.message, "error");
@@ -121,7 +131,7 @@ export default function Home() {
       addToast("Đang kết nối để xin quyền...", "success"); 
       const token = await requestForToken();
       if (token) {
-        prompt("Đã bật thông báo thành công! Đây là mã Token của điện thoại bạn (Hãy copy nó):", token);
+        prompt("Đã bật thông báo thành công! Đây là mã Token (Hãy copy nó):", token);
       } else {
         addToast("Từ chối nhận thông báo hoặc không hỗ trợ.", "error");
       }
@@ -135,7 +145,6 @@ export default function Home() {
     <main className="min-h-[100dvh] w-full bg-[#bac4e5] flex items-center justify-center p-4 font-sans relative overflow-hidden flex-col">
       <ToastContainer toasts={toasts} />
 
-      {/* --- PHẦN NỘI DUNG CHÍNH --- */}
       <div className="w-full max-w-md relative">
         <div className="relative z-10 -mb-[1px]">
           <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -157,11 +166,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- NÚT BÁNH RĂNG (Góc dưới bên phải) --- */}
+      {/* --- NÚT BÁNH RĂNG --- */}
       <button
         onClick={() => setIsSettingsOpen(true)}
-        className="fixed bottom-4 right-4 z-40 p-2.5 bg-white/40 backdrop-blur-md border border-white/50 shadow-sm rounded-full text-slate-600 opacity-50 hover:opacity-100 hover:bg-white/70 hover:scale-105 active:scale-95 transition-all duration-300"
-        aria-label="Mở cài đặt"
+        className="fixed bottom-4 right-4 z-40 p-2.5 bg-white/40 backdrop-blur-md border border-white/50 shadow-sm rounded-full text-slate-600 opacity-50 hover:opacity-100 hover:bg-white/70 active:scale-95 transition-all duration-300"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -169,61 +177,73 @@ export default function Home() {
         </svg>
       </button>
 
-      {/* --- MENU TRƯỢT TỪ DƯỚI LÊN (BOTTOM SHEET) --- */}
-      {/* 1. Lớp phủ đen mờ */}
+      {/* --- MENU TRƯỢT TỪ DƯỚI LÊN --- */}
       <div 
-        className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isSettingsOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isSettingsOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsSettingsOpen(false)}
       ></div>
 
-      {/* 2. Bảng Menu trượt */}
       <div 
-        className={`fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[70] transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${isSettingsOpen ? 'translate-y-0' : 'translate-y-full'}`}
+        className={`fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[70] transform transition-transform duration-300 ${isSettingsOpen ? 'translate-y-0' : 'translate-y-full'}`}
       >
-        {/* Nút gạt nhỏ (Handle) để giả lập cảm giác vuốt của iOS */}
         <div className="w-full flex justify-center pt-3 pb-1 cursor-pointer" onClick={() => setIsSettingsOpen(false)}>
           <div className="w-12 h-1.5 bg-slate-200 rounded-full"></div>
         </div>
 
         <div className="p-6 pt-2">
-          {/* Header của Menu */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-black text-slate-800">Cài đặt</h2>
-            <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-              <svg className="w-5 h-5 text-slate-400 hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+            <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-slate-100 rounded-full">
+              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
           <div className="space-y-4 mb-6">
-            {/* Mục Cài đặt Thông báo */}
+            {/* Mục Thông báo đẩy */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div className="flex items-center gap-3 mb-2">
                 <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                 </div>
                 <span className="font-bold text-slate-700">Thông báo đẩy</span>
               </div>
-              <p className="text-xs text-slate-500 mb-4 ml-[44px]">Nhận nhắc nhở lịch trình xe vào lúc 20:00 tối mỗi ngày.</p>
-              
+              <p className="text-[11px] text-slate-500 mb-4 ml-10 leading-relaxed">Tự động nhắc nhở lịch trình xe vào lúc 20:00 tối mỗi ngày.</p>
               <button 
-                onClick={() => {
-                  handleEnableNotification();
-                  setIsSettingsOpen(false); // Tự động đóng menu sau khi bấm để gọn gàng
-                }}
+                onClick={() => { handleEnableNotification(); setIsSettingsOpen(false); }}
                 className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all"
               >
                 Kích hoạt thông báo
               </button>
             </div>
+
+            {/* Mục Chế độ xem mặc định */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="bg-purple-100 p-2 rounded-lg text-purple-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>
+                </div>
+                <span className="font-bold text-slate-700">Chế độ xem mặc định</span>
+              </div>
+              
+              <div className="flex bg-white p-1 rounded-xl border border-slate-200 gap-1">
+                <button 
+                  onClick={() => handleSaveDefaultView("day")}
+                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${defaultView === 'day' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+                >
+                  Theo Ngày
+                </button>
+                <button 
+                  onClick={() => handleSaveDefaultView("week")}
+                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${defaultView === 'week' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+                >
+                  Theo Tuần
+                </button>
+              </div>
+              <p className="text-[9px] text-slate-400 mt-2 text-center italic">* Lựa chọn sẽ áp dụng khi bạn mở lại App lần sau</p>
+            </div>
           </div>
           
-          <div className="text-center pb-4">
-             <p className="text-[10px] text-slate-400 uppercase tracking-widest">Phiên bản 2.0.1</p>
-          </div>
+          <div className="text-center pb-4 text-[10px] text-slate-300 uppercase tracking-widest">Phiên bản 2.0.1</div>
         </div>
       </div>
 
@@ -232,8 +252,6 @@ export default function Home() {
         .animate-slide-down { animation: slideDown 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
-        .animate-scale-in { animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}</style>
     </main>
   );
