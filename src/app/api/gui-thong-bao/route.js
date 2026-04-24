@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'; // 🔴 DÒNG PHÉP THUẬT: Ép Vercel luôn chạy mới 100%, không bị nhớ ngày cũ
+
 import { NextResponse } from 'next/server';
 import { google } from "googleapis";
 import admin from 'firebase-admin';
@@ -13,32 +15,28 @@ if (!admin.apps.length) {
   });
 }
 
-// 2. HÀM LẤY NGÀY MAI (Chuẩn múi giờ Việt Nam)
+// 2. HÀM LẤY NGÀY MAI (Ép chuẩn múi giờ Việt Nam)
 const getTomorrowDateString = () => {
-  const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Ho_Chi_Minh"}));
-  now.setDate(now.getDate() + 1); 
+  const now = new Date(); 
+  // Ép tuyệt đối về múi giờ Việt Nam (UTC+7)
+  const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+  vnTime.setDate(vnTime.getDate() + 1); 
   
-  const dd = String(now.getDate()).padStart(2, '0');
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const yyyy = now.getFullYear();
+  const dd = String(vnTime.getDate()).padStart(2, '0');
+  const mm = String(vnTime.getMonth() + 1).padStart(2, '0');
+  const yyyy = vnTime.getFullYear();
   return `${dd}/${mm}/${yyyy}`; 
 };
 
-// ĐÃ SỬA: Hàm chuẩn hóa ngày siêu thông minh (Xử lý được cả 2026-04-26 và 26/4/2026)
+// Hàm chuẩn hóa ngày (Dịch được cả 2026-04-26 và 26/4/2026)
 const normalizeDate = (dateStr) => {
   if (!dateStr) return "";
   let cleanDate = String(dateStr).trim();
 
-  // Nếu Sheet dùng dấu gạch ngang (VD: 2026-04-26) -> Đổi thành 26/04/2026
   if (cleanDate.includes('-')) {
     const parts = cleanDate.split('-');
-    if (parts.length === 3) {
-      // parts[0] = Năm, parts[1] = Tháng, parts[2] = Ngày
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
-
-  // Nếu Sheet dùng dấu xuyệt (VD: 26/4/2026) -> Đổi thành 26/04/2026
   if (cleanDate.includes('/')) {
     const parts = cleanDate.split('/');
     if (parts.length === 3) {
@@ -48,7 +46,6 @@ const normalizeDate = (dateStr) => {
       return `${d}/${m}/${y}`;
     }
   }
-
   return cleanDate;
 };
 
@@ -72,10 +69,9 @@ export async function GET(request) {
     const rows = response.data.values || [];
     const tomorrowStr = getTomorrowDateString(); 
 
-    // 4. LỌC TÌM CÁC CHUYẾN ĐI
+    // 4. LỌC TÌM CÁC CHUYẾN ĐI NGÀY MAI
     const tomorrowTrips = rows.filter(row => {
-      const tripDate = normalizeDate(row[0]); // Chạy qua bộ dịch thuật
-      return tripDate === tomorrowStr;
+      return normalizeDate(row[0]) === tomorrowStr;
     });
 
     if (tomorrowTrips.length === 0) {
@@ -95,13 +91,13 @@ export async function GET(request) {
       notificationBody += `... và ${tomorrowTrips.length - 3} chuyến khác.`;
     }
 
-    // 6. GỬI LÊN FIREBASE
+    // 6. GỬI LÊN FIREBASE CHO 1 MÁY DUY NHẤT
     const message = {
       notification: {
         title: `Lịch trình ngày mai (${tomorrowStr}) 🗓️`,
         body: notificationBody,
       },
-      // ⚠️ QUAN TRỌNG: Hãy dán lại đoạn Token của điện thoại bạn vào đây nhé!
+      // ⚠️ QUAN TRỌNG: Dán lại mã Token siêu dài của bạn vào đây
       token: "cE9II06GPziuToeur5y8lG:APA91bG7pmjX9XLFM4lVUR70eqfwsxg7qcuJaGQvuHjW3wvGLc_iF6OutELX4F8KAxydcSAklz3sbXvZhWmnkzvbmMQNEZ651yy4Q9sA529Ref-q1eAP4sg", 
     };
 
@@ -109,7 +105,7 @@ export async function GET(request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: "Đã gửi thông báo thành công về điện thoại!", 
+      message: `Đã gửi thông báo thành công cho ngày ${tomorrowStr}!`, 
       firebaseId: fbResponse 
     });
 
