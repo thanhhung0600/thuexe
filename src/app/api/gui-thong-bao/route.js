@@ -102,7 +102,7 @@ export async function GET(request) {
         body: notificationBody,
       },
       // ⚠️ QUAN TRỌNG: Hãy dán lại đoạn Token của điện thoại bạn vào đây nhé!
-      token: "cwmFe0KjsJaUVZq770hTKp:APA91bHgc3Q2N8WvRyKDUkA3rsAkUxEvO9-FcPc23zZ9OMZfCERO1NpGltRy9aIgqN4AcDwTncGejw6Jb_iS4VDBMsYkBhJtkr9_J4f7Agamk8Wna7fpsNU", 
+      token: "cE9II06GPziuToeur5y8lG:APA91bG7pmjX9XLFM4lVUR70eqfwsxg7qcuJaGQvuHjW3wvGLc_iF6OutELX4F8KAxydcSAklz3sbXvZhWmnkzvbmMQNEZ651yy4Q9sA529Ref-q1eAP4sg", 
     };
 
     const fbResponse = await admin.messaging().send(message);
