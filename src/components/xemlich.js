@@ -1,6 +1,7 @@
 "use client";
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useGesture } from "@use-gesture/react"; 
 import LichTrinhChiTiet from "./LichTrinhChiTiet";
 
 export default function XemLich() {
@@ -12,9 +13,8 @@ export default function XemLich() {
   const [viewMode, setViewMode] = useState("day"); 
   const [slideDirection, setSlideDirection] = useState(0);
   
-  // State quản lý độ phóng to (zoom)
   const [scale, setScale] = useState(1);
-  const containerRef = useRef(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
 
   const oRong = 38; 
   const oCao = 55; 
@@ -52,16 +52,10 @@ export default function XemLich() {
     return allRentals.filter(item => {
       const dateVal = item.ngày || item.date;
       if (!dateVal) return false;
-      
       const formattedDateVal = dateVal.includes('/') ? dateVal.split('/').reverse().join('-') : dateVal;
       const d = new Date(formattedDateVal);
       if (isNaN(d.getTime())) return false;
-
-      const dYear = d.getFullYear();
-      const dMonth = String(d.getMonth() + 1).padStart(2, '0');
-      const dDay = String(d.getDate()).padStart(2, '0');
-      const dStr = `${dYear}-${dMonth}-${dDay}`;
-
+      const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       return dStr === tStr;
     });
   };
@@ -71,7 +65,6 @@ export default function XemLich() {
     const day = startOfWeek.getDay();
     const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); 
     startOfWeek.setDate(diff);
-    
     return Array.from({ length: 7 }).map((_, i) => {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
@@ -93,39 +86,6 @@ export default function XemLich() {
   const isSameDay = (d1, d2) => d1.toLocaleDateString() === d2.toLocaleDateString();
   const dotColors = ["bg-cyan-300", "bg-indigo-400", "bg-teal-400", "bg-emerald-400"];
 
-  // ==========================================
-  // XỬ LÝ VUỐT (SWIPE) & PHÓNG TO (PINCH) THÔNG MINH
-  // ==========================================
-  const minSwipeDistance = 50; 
-
-  const [weekTouchStart, setWeekTouchStart] = useState(null);
-  const [weekTouchEnd, setWeekTouchEnd] = useState(null);
-
-  const onWeekTouchStart = (e) => {
-    setWeekTouchEnd(null);
-    setWeekTouchStart(e.targetTouches[0].clientX);
-  };
-  const onWeekTouchMove = (e) => setWeekTouchEnd(e.targetTouches[0].clientX);
-  const onWeekTouchEnd = () => {
-    if (!weekTouchStart || !weekTouchEnd) return;
-    const distance = weekTouchStart - weekTouchEnd;
-    
-    if (distance > minSwipeDistance) {
-      const nextWeek = new Date(currentWeekAnchor);
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      setCurrentWeekAnchor(nextWeek);
-    } else if (distance < -minSwipeDistance) {
-      const prevWeek = new Date(currentWeekAnchor);
-      prevWeek.setDate(prevWeek.getDate() - 7);
-      setCurrentWeekAnchor(prevWeek);
-    }
-  };
-
-  const [contentTouchStart, setContentTouchStart] = useState({ x: null, y: null });
-  const [contentTouchEnd, setContentTouchEnd] = useState({ x: null, y: null });
-  const [initialPinchDistance, setInitialPinchDistance] = useState(null);
-  const [isScrolling, setIsScrolling] = useState(false); 
-
   const syncWeekWithDay = (newDate) => {
     const start = daysInWeek[0].setHours(0,0,0,0);
     const end = daysInWeek[6].setHours(0,0,0,0);
@@ -135,86 +95,57 @@ export default function XemLich() {
     }
   };
 
-  const onContentTouchStart = (e) => {
-    if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      setInitialPinchDistance(Math.sqrt(dx * dx + dy * dy));
-      setIsScrolling(false);
-    } else if (e.touches.length === 1) {
-      setContentTouchEnd({ x: null, y: null });
-      setContentTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-      setIsScrolling(false);
+  const handleDateChange = (direction) => {
+    setSlideDirection(direction);
+    if (viewMode === "day") {
+      const nextDay = new Date(selectedDate);
+      nextDay.setDate(nextDay.getDate() + direction);
+      setSelectedDate(nextDay);
+      syncWeekWithDay(nextDay);
+    } else {
+      const nextWeek = new Date(currentWeekAnchor);
+      nextWeek.setDate(nextWeek.getDate() + (direction * 7));
+      setCurrentWeekAnchor(nextWeek);
     }
   };
 
-  const onContentTouchMove = (e) => {
-    if (e.touches.length === 2 && initialPinchDistance) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      setScale(Math.min(Math.max(1, distance / initialPinchDistance), 1.5)); 
-    } else if (e.touches.length === 1 && scale === 1) {
-      const currentX = e.touches[0].clientX;
-      const currentY = e.touches[0].clientY;
-
-      if (contentTouchStart.x !== null && contentTouchStart.y !== null) {
-        const diffX = contentTouchStart.x - currentX;
-        const diffY = contentTouchStart.y - currentY;
-
-        if (Math.abs(diffY) > Math.abs(diffX)) {
-          setIsScrolling(true);
-        }
-      }
-      setContentTouchEnd({ x: currentX, y: currentY });
-    }
-  };
-  
-  const onContentTouchEnd = () => {
-    if (scale > 1) {
-       // Xóa đi đoạn tự reset để giữ scale khi buông tay
-       setInitialPinchDistance(null);
-       return;
-    }
-
-    if (isScrolling || !contentTouchStart.x || !contentTouchEnd.x) {
-      setContentTouchStart({ x: null, y: null });
-      setContentTouchEnd({ x: null, y: null });
-      setIsScrolling(false);
-      return;
-    }
-
-    const distance = contentTouchStart.x - contentTouchEnd.x;
-    
-    if (distance > minSwipeDistance) {
-      setSlideDirection(1); 
-      if (viewMode === "day") {
-        const nextDay = new Date(selectedDate);
-        nextDay.setDate(nextDay.getDate() + 1);
-        setSelectedDate(nextDay);
-        syncWeekWithDay(nextDay);
-      } else {
+  const bindWeekBar = useGesture({
+    onDrag: ({ active, direction: [dx], distance: [distX] }) => {
+      if (!active && distX > 40) {
+        const dir = dx > 0 ? -7 : 7; 
         const nextWeek = new Date(currentWeekAnchor);
-        nextWeek.setDate(nextWeek.getDate() + 7);
+        nextWeek.setDate(nextWeek.getDate() + dir);
         setCurrentWeekAnchor(nextWeek);
       }
-    } else if (distance < -minSwipeDistance) {
-      setSlideDirection(-1); 
-      if (viewMode === "day") {
-        const prevDay = new Date(selectedDate);
-        prevDay.setDate(prevDay.getDate() - 1);
-        setSelectedDate(prevDay);
-        syncWeekWithDay(prevDay);
-      } else {
-        const prevWeek = new Date(currentWeekAnchor);
-        prevWeek.setDate(prevWeek.getDate() - 7);
-        setCurrentWeekAnchor(prevWeek);
-      }
     }
+  }, { drag: { axis: 'x' } }); 
 
-    setContentTouchStart({ x: null, y: null });
-    setContentTouchEnd({ x: null, y: null });
-    setIsScrolling(false);
+  const bindContent = useGesture({
+    onDrag: ({ active, movement: [mx, my], direction: [dx], distance: [distX] }) => {
+      if (scale > 1) {
+        setPan({ x: mx, y: my });
+      } else {
+        if (!active && distX > 60) {
+          handleDateChange(dx > 0 ? -1 : 1);
+        }
+      }
+    },
+    onPinch: ({ offset: [s] }) => {
+      setScale(s);
+      if (s === 1) setPan({ x: 0, y: 0 }); 
+    }
+  }, {
+    drag: { 
+      axis: scale === 1 ? 'x' : undefined,
+      from: () => [pan.x, pan.y],
+      filterTaps: true
+    },
+    pinch: { scaleBounds: { min: 1, max: 2 }, modifierKey: 'shift' } 
+  });
+
+  const resetZoom = () => {
+    setScale(1);
+    setPan({ x: 0, y: 0 });
   };
 
   const containerVariants = {
@@ -247,7 +178,6 @@ export default function XemLich() {
       className="flex flex-col w-full relative overflow-visible text-slate-800"
     >
       
-      {/* 1. KHU VỰC CHUYỂN ĐỔI NGÀY/TUẦN */}
       <motion.div variants={itemVariants} className="w-full flex items-center justify-center -mt-3 mb-1.5">
         <div className="flex bg-gray-100 p-1 rounded-xl w-[200px] border border-gray-200 shadow-inner relative">
           <button 
@@ -268,31 +198,27 @@ export default function XemLich() {
         </div>
       </motion.div>
 
-      {/* 2. THANH LỊCH NGÀY HOẶC TEXT TUẦN */}
       <AnimatePresence mode="wait">
         {viewMode === "day" ? (
           <motion.div 
+            {...bindWeekBar()} 
             key="day-bar"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="mx-[-17px] bg-gray-50 rounded-2xl p-1.5 flex items-center justify-between border border-gray-100 shadow-sm relative z-20"
-            onTouchStart={onWeekTouchStart}
-            onTouchMove={onWeekTouchMove}
-            onTouchEnd={onWeekTouchEnd}
+            className="mx-[-17px] bg-gray-50 rounded-2xl p-1.5 flex items-center justify-between border border-gray-100 shadow-sm relative z-20 touch-pan-y"
           >
+            {/* Đã thêm thẻ key="btn-prev" vào đây để fix lỗi */}
             <button 
-              onClick={() => {
-                const d = new Date(currentWeekAnchor);
-                d.setDate(d.getDate() - 7);
-                setCurrentWeekAnchor(d);
-              }} 
+              key="btn-prev"
+              onClick={() => handleDateChange(-7)} 
               className="w-[26px] h-10 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-center text-gray-500 z-30 relative active:scale-90 active:bg-gray-50 transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
             </button>
 
-            <div className="flex flex-1 justify-around items-center h-12 relative px-1 cursor-grab active:cursor-grabbing">
+            {/* Đã thêm thẻ key="days-container" vào đây để fix lỗi */}
+            <div key="days-container" className="flex flex-1 justify-around items-center h-12 relative px-1 cursor-grab active:cursor-grabbing">
               {daysInWeek.map((dateItem, idx) => {
                 const active = viewMode === "day" && isSameDay(dateItem, selectedDate);
                 const count = getRentalsForDate(dateItem).length;
@@ -335,12 +261,10 @@ export default function XemLich() {
               })}
             </div>
             
+            {/* Đã thêm thẻ key="btn-next" vào đây để fix lỗi */}
             <button 
-              onClick={() => {
-                const d = new Date(currentWeekAnchor);
-                d.setDate(d.getDate() + 7);
-                setCurrentWeekAnchor(d);
-              }} 
+              key="btn-next"
+              onClick={() => handleDateChange(7)} 
               className="w-[26px] h-10 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-center text-gray-500 z-30 relative active:scale-90 active:bg-gray-50 transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
@@ -361,10 +285,10 @@ export default function XemLich() {
         )}
       </AnimatePresence>
 
-      {/* TIÊU ĐỀ NGÀY CHI TIẾT */}
       <AnimatePresence>
         {viewMode === "day" && (
           <motion.div 
+            key="date-title-block" // Đã thêm thẻ key vào đây để fix lỗi AnimatePresence
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -377,15 +301,11 @@ export default function XemLich() {
         )}
       </AnimatePresence>
 
-      {/* 3. KHUNG HIỂN THỊ LỊCH TRÌNH */}
       <motion.div 
+        {...bindContent()} 
         variants={itemVariants} 
-        ref={containerRef}
-        className={`mx-[-17px] mt-1 ${viewMode === "week" ? "h-[450px]" : "h-[410px]"} overflow-x-hidden overflow-y-auto bg-gray-50/50 rounded-2xl shadow-inner border border-gray-100 no-scrollbar relative mb-2 transition-all duration-300 touch-none`}
-        onTouchStart={onContentTouchStart}
-        onTouchMove={onContentTouchMove}
-        onTouchEnd={onContentTouchEnd}
-        onTouchCancel={onContentTouchEnd}
+        className={`mx-[-17px] mt-1 ${viewMode === "week" ? "h-[450px]" : "h-[410px]"} overflow-x-hidden overflow-y-auto bg-gray-50/50 rounded-2xl shadow-inner border border-gray-100 no-scrollbar relative mb-2 transition-all duration-300 touch-pan-y`}
+        style={{ touchAction: scale > 1 ? 'none' : 'pan-y' }} 
       >
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-3">
@@ -405,16 +325,14 @@ export default function XemLich() {
               className="min-h-full" 
             >
               <motion.div 
-                className="pb-4 px-2 pt-2 relative origin-top"
-                animate={{ scale: scale }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="pb-4 px-2 pt-2 relative origin-center"
+                animate={{ scale: scale, x: pan.x, y: pan.y }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
               >
-                {/* === HIỂN THỊ CHẾ ĐỘ NGÀY === */}
                 {viewMode === "day" && (
                   <LichTrinhChiTiet data={dayData} />
                 )}
 
-                {/* === HIỂN THỊ CHẾ ĐỘ TUẦN === */}
                 {viewMode === "week" && (
                   groupedWeekData.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-[300px] opacity-50">
@@ -453,15 +371,10 @@ export default function XemLich() {
         )}
       </motion.div>
 
-      {/* 4. FOOTER (NÚT 1X - HÔM NAY - LÀM MỚI) */}
       <motion.div variants={itemVariants} className="flex items-center justify-center py-1 gap-3">
         
-        {/* Nút 1X (Reset Zoom) - Đối xứng bên trái, chỉ hiện khi phóng to */}
         <button 
-          onClick={() => {
-            setScale(1);
-            setInitialPinchDistance(null);
-          }}
+          onClick={resetZoom}
           className={`w-11 h-11 bg-white border border-gray-100 text-blue-600 rounded-full shadow-md active:scale-90 transition-all flex items-center justify-center ${scale > 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         >
           <span className="font-black text-[14px] tracking-tighter">1X</span>
@@ -473,6 +386,7 @@ export default function XemLich() {
             setSlideDirection(t > (viewMode === "day" ? selectedDate : currentWeekAnchor) ? 1 : -1);
             setCurrentWeekAnchor(t); 
             setSelectedDate(t); 
+            resetZoom();
           }}
           className="px-10 py-3 bg-white border border-gray-100 text-blue-600 text-[11px] font-black uppercase tracking-[0.3em] rounded-full shadow-md active:scale-95 transition-all hover:bg-gray-50"
         >
@@ -480,7 +394,7 @@ export default function XemLich() {
         </button>
 
         <button 
-          onClick={fetchData} 
+          onClick={() => { fetchData(); resetZoom(); }} 
           disabled={loading}
           className={`w-11 h-11 bg-white border border-gray-100 text-gray-500 rounded-full shadow-md active:scale-90 transition-all flex items-center justify-center ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
         >
@@ -491,6 +405,7 @@ export default function XemLich() {
       <style jsx>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .touch-pan-y { touch-action: pan-y pinch-zoom; }
       `}</style>
 
     </motion.div>
