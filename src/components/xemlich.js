@@ -16,9 +16,21 @@ export default function XemLich() {
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
+  const scrollContainerRef = useRef(null);
+  const todayRef = useRef(null);
+
   const oRong = 38; 
   const oCao = 55; 
   const doDayLen = 0.5; 
+
+  // --- KHÔI PHỤC LẠI: Đọc cài đặt mặc định (Ngày/Tuần) từ Setting ---
+  useEffect(() => {
+    const savedMode = localStorage.getItem("defaultViewMode");
+    if (savedMode === "week" || savedMode === "day") {
+      setViewMode(savedMode);
+    }
+  }, []);
+  // ------------------------------------------------------------------
 
   const fetchData = useCallback(async () => {
     try {
@@ -109,6 +121,27 @@ export default function XemLich() {
     }
   };
 
+  // --- Logic Tự động cuộn đến Ngày Hôm Nay ở chế độ xem Tuần ---
+  useEffect(() => {
+    if (viewMode === "week" && !loading && scale === 1) {
+      const timer = setTimeout(() => {
+        if (todayRef.current && scrollContainerRef.current) {
+          const container = scrollContainerRef.current;
+          const targetElement = todayRef.current;
+          
+          const containerRect = container.getBoundingClientRect();
+          const targetRect = targetElement.getBoundingClientRect();
+          
+          container.scrollBy({
+            top: targetRect.top - containerRect.top - 15,
+            behavior: 'smooth'
+          });
+        }
+      }, 350); 
+      return () => clearTimeout(timer);
+    }
+  }, [viewMode, loading, currentWeekAnchor, scale]);
+
   const bindWeekBar = useGesture({
     onDrag: ({ active, direction: [dx], distance: [distX] }) => {
       if (!active && distX > 40) {
@@ -181,13 +214,13 @@ export default function XemLich() {
       <motion.div variants={itemVariants} className="w-full flex items-center justify-center -mt-3 mb-1.5">
         <div className="flex bg-gray-100 p-1 rounded-xl w-[200px] border border-gray-200 shadow-inner relative">
           <button 
-            onClick={() => setViewMode("day")} 
+            onClick={() => { setViewMode("day"); localStorage.setItem("defaultViewMode", "day"); }} 
             className={`flex-1 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 relative z-10 ${viewMode === "day" ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
           >
             Theo Ngày
           </button>
           <button 
-            onClick={() => setViewMode("week")} 
+            onClick={() => { setViewMode("week"); localStorage.setItem("defaultViewMode", "week"); }} 
             className={`flex-1 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 relative z-10 ${viewMode === "week" ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
           >
             Theo Tuần
@@ -208,7 +241,6 @@ export default function XemLich() {
             exit={{ opacity: 0, height: 0 }}
             className="mx-[-17px] bg-gray-50 rounded-2xl p-1.5 flex items-center justify-between border border-gray-100 shadow-sm relative z-20 touch-pan-y"
           >
-            {/* Đã thêm thẻ key="btn-prev" vào đây để fix lỗi */}
             <button 
               key="btn-prev"
               onClick={() => handleDateChange(-7)} 
@@ -217,7 +249,6 @@ export default function XemLich() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
             </button>
 
-            {/* Đã thêm thẻ key="days-container" vào đây để fix lỗi */}
             <div key="days-container" className="flex flex-1 justify-around items-center h-12 relative px-1 cursor-grab active:cursor-grabbing">
               {daysInWeek.map((dateItem, idx) => {
                 const active = viewMode === "day" && isSameDay(dateItem, selectedDate);
@@ -261,7 +292,6 @@ export default function XemLich() {
               })}
             </div>
             
-            {/* Đã thêm thẻ key="btn-next" vào đây để fix lỗi */}
             <button 
               key="btn-next"
               onClick={() => handleDateChange(7)} 
@@ -288,7 +318,7 @@ export default function XemLich() {
       <AnimatePresence>
         {viewMode === "day" && (
           <motion.div 
-            key="date-title-block" // Đã thêm thẻ key vào đây để fix lỗi AnimatePresence
+            key="date-title-block" 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -304,6 +334,7 @@ export default function XemLich() {
       <motion.div 
         {...bindContent()} 
         variants={itemVariants} 
+        ref={scrollContainerRef}
         className={`mx-[-17px] mt-1 ${viewMode === "week" ? "h-[450px]" : "h-[410px]"} overflow-x-hidden overflow-y-auto bg-gray-50/50 rounded-2xl shadow-inner border border-gray-100 no-scrollbar relative mb-2 transition-all duration-300 touch-pan-y`}
         style={{ touchAction: scale > 1 ? 'none' : 'pan-y' }} 
       >
@@ -330,7 +361,7 @@ export default function XemLich() {
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               >
                 {viewMode === "day" && (
-                  <LichTrinhChiTiet data={dayData} />
+                  <LichTrinhChiTiet data={dayData} onRefresh={fetchData} />
                 )}
 
                 {viewMode === "week" && (
@@ -341,27 +372,34 @@ export default function XemLich() {
                     </div>
                   ) : (
                     <div className="flex flex-col gap-5 relative">
-                      {groupedWeekData.map((group) => (
-                        <div key={group.date.toISOString()} className="flex flex-col gap-1.5">
-                          <div className="sticky top-2 z-30 bg-white/95 backdrop-blur-md border border-gray-100 py-2 px-4 mx-1 rounded-xl flex items-center justify-between shadow-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[13px] font-black text-slate-700 tracking-tight">
-                                {group.date.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                      {groupedWeekData.map((group) => {
+                        const isToday = isSameDay(group.date, new Date());
+                        return (
+                          <div 
+                            key={group.date.toISOString()} 
+                            ref={isToday ? todayRef : null} 
+                            className="flex flex-col gap-1.5"
+                          >
+                            <div className="sticky top-2 z-30 bg-white/95 backdrop-blur-md border border-gray-100 py-2 px-4 mx-1 rounded-xl flex items-center justify-between shadow-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[13px] font-black text-slate-700 tracking-tight">
+                                  {group.date.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                                </span>
+                                {isToday && (
+                                  <span className="bg-blue-500 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm">Hôm nay</span>
+                                )}
+                              </div>
+                              <span className="bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md">
+                                {group.rentals.length} chuyến
                               </span>
-                              {isSameDay(group.date, new Date()) && (
-                                <span className="bg-blue-500 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm">Hôm nay</span>
-                              )}
                             </div>
-                            <span className="bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md">
-                              {group.rentals.length} chuyến
-                            </span>
-                          </div>
 
-                          <div className="px-0 z-20">
-                            <LichTrinhChiTiet data={group.rentals} />
+                            <div className="px-0 z-20">
+                              <LichTrinhChiTiet data={group.rentals} onRefresh={fetchData} />
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )
                 )}
