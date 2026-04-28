@@ -1,8 +1,16 @@
 {
   "crons": [
     {
-      "path": "/api/gui-thong-bao",
-      "schedule": "0 14 * * *"
+      "path": "/api/gui-thong-bao?buoi=sang",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/gui-thong-bao?buoi=trua",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/gui-thong-bao?buoi=toi",
+      "schedule": "0 12 * * *"
     }
   ]
 }
