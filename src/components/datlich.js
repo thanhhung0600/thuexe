@@ -1,22 +1,29 @@
 "use client";
 import { motion } from "framer-motion";
 
-export default function DatLich({ formData, handleChange, handleSubmit, errors, isSubmitting }) {
-  // Class dùng chung cho tất cả input để đảm bảo kích thước bằng nhau tuyệt đối
-  const inputBaseClass = "w-full border rounded-2xl p-3 outline-none focus:border-blue-500 text-black bg-white transition-all box-border block appearance-none";
+// BỔ SUNG isDarkMode VÀO PROPS
+export default function DatLich({ formData, handleChange, handleSubmit, errors, isSubmitting, isDarkMode }) {
+  
+  // Tự động đổi màu nền, viền và chữ dựa vào trạng thái isDarkMode
+  const inputBaseClass = `w-full border rounded-2xl p-3 outline-none focus:border-blue-500 transition-all box-border block appearance-none ${
+    isDarkMode 
+      ? 'bg-slate-700 text-white border-slate-600 focus:bg-slate-800 placeholder-slate-400' 
+      : 'bg-white text-black border-gray-300'
+  }`;
 
-  // ✅ KHAI BÁO HIỆU ỨNG: Container quản lý thời gian xuất hiện nối đuôi nhau
+  // Màu khi người dùng nhập thiếu thông tin (Báo lỗi đỏ)
+  const errorClass = isDarkMode ? 'border-red-500 bg-red-900/30' : 'border-red-500 bg-red-50';
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08, // Mỗi dòng cách nhau 0.08s
+        staggerChildren: 0.08, 
       }
     }
   };
 
-  // ✅ KHAI BÁO HIỆU ỨNG: Từng dòng trượt từ dưới lên
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { 
@@ -27,7 +34,6 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
   };
 
   return (
-    // Đổi form thành motion.form để nhận hiệu ứng
     <motion.form 
       className="space-y-3 text-sm" 
       onSubmit={handleSubmit} 
@@ -42,7 +48,7 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
         <input 
           type="text" name="tenKhach" placeholder="Tên khách *"
           value={formData.tenKhach} onChange={handleChange}
-          className={`${inputBaseClass} ${errors.tenKhach ? 'border-red-500 bg-red-50' : 'border-gray-300'}`} 
+          className={`${inputBaseClass} ${errors.tenKhach ? errorClass : ''}`} 
         />
       </motion.div>
 
@@ -51,7 +57,7 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
         <input 
           type="tel" name="sdt" placeholder="Số điện thoại"
           value={formData.sdt} onChange={handleChange}
-          className={`${inputBaseClass} border-gray-300`} 
+          className={inputBaseClass} 
         />
       </motion.div>
 
@@ -62,7 +68,7 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
             name="loaiXe"
             value={formData.loaiXe}
             onChange={handleChange}
-            className={`${inputBaseClass} cursor-pointer pr-8 ${errors.loaiXe ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+            className={`${inputBaseClass} cursor-pointer pr-8 ${errors.loaiXe ? errorClass : ''}`}
           >
             <option value="">Chọn xe *</option>
             <option value="Xe 4 (Thái)">Xe 4 chỗ(Thái)</option>
@@ -77,7 +83,7 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
           <input
             type="text" name="taiXe" placeholder="Tài xế"
             value={formData.taiXe} onChange={handleChange}
-            className={`${inputBaseClass} border-gray-300`}
+            className={inputBaseClass}
           />
         </div>
       </motion.div>
@@ -87,7 +93,7 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
         <input
           type="date" name="ngayThue"
           value={formData.ngayThue} onChange={handleChange}
-          className={`${inputBaseClass} ${errors.ngayThue ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+          className={`${inputBaseClass} ${errors.ngayThue ? errorClass : ''}`}
           style={{ width: '100%', maxWidth: '100%' }}
         />
       </motion.div>
@@ -97,7 +103,7 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
         <input
           type="time" name="gioThue"
           value={formData.gioThue} onChange={handleChange}
-          className={`${inputBaseClass} border-gray-300`}
+          className={inputBaseClass}
           style={{ width: '100%', maxWidth: '100%' }}
         />
       </motion.div>
@@ -107,7 +113,7 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
         <input 
           type="text" name="gia" placeholder="Giá"
           value={formData.gia} onChange={handleChange}
-          className={`${inputBaseClass} border-gray-300`} 
+          className={inputBaseClass} 
         />
       </motion.div>
 
@@ -116,7 +122,7 @@ export default function DatLich({ formData, handleChange, handleSubmit, errors, 
         <input 
           type="text" name="ghiChu" placeholder="Ghi chú (Tùy chọn)"
           value={formData.ghiChu} onChange={handleChange}
-          className={`${inputBaseClass} border-gray-300`} 
+          className={inputBaseClass} 
         />
       </motion.div>
 

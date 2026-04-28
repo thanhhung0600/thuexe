@@ -2,23 +2,33 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function ModalXoa({ isOpen, onClose, onConfirm, itemName, isLoading }) {
-  if (!isOpen) return null;
+// BỔ SUNG PROPS isDarkMode
+export default function ModalXoa({ isOpen, onClose, onConfirm, itemName, isLoading, isDarkMode }) {
+  // Đã bỏ dòng `if (!isOpen) return null;` để hiệu ứng exit của AnimatePresence hoạt động mượt mà!
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100000] flex items-center justify-center px-6 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}>
+        <div 
+          className={`fixed inset-0 z-[100000] flex items-center justify-center px-6 backdrop-blur-sm transition-colors duration-300 ${
+            isDarkMode ? 'bg-slate-900/80' : 'bg-slate-900/60'
+          }`} 
+          onClick={onClose}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="bg-white rounded-[32px] p-7 w-full max-w-[340px] shadow-2xl relative overflow-hidden"
+            className={`rounded-[32px] p-7 w-full max-w-[340px] shadow-2xl relative overflow-hidden transition-colors ${
+              isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white'
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Vòng tròn trang trí nền */}
-            <div className="absolute -top-12 -right-12 w-32 h-32 bg-red-50 rounded-full opacity-60" />
+            <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-60 ${
+              isDarkMode ? 'bg-red-900/20' : 'bg-red-50'
+            }`} />
             
             <div className="relative z-10">
               <div className="flex justify-center mb-5 text-red-500">
@@ -27,10 +37,17 @@ export default function ModalXoa({ isOpen, onClose, onConfirm, itemName, isLoadi
                 </svg>
               </div>
               
-              <h3 className="text-center font-black text-slate-800 text-[20px] mb-2">Xác nhận xóa chuyến xe?</h3>
-              <p className="text-center text-slate-600 text-sm mb-7 leading-relaxed">
+              <h3 className={`text-center font-black text-[20px] mb-2 ${
+                isDarkMode ? 'text-slate-200' : 'text-slate-800'
+              }`}>
+                Xác nhận xóa chuyến xe?
+              </h3>
+              
+              <p className={`text-center text-sm mb-7 leading-relaxed ${
+                isDarkMode ? 'text-slate-400' : 'text-slate-600'
+              }`}>
                 Bạn có chắc chắn muốn xóa vĩnh viễn chuyến xe của khách hàng 
-                <span className="font-bold text-slate-800"> {itemName || "này"}</span>? Hành động này không thể hoàn tác.
+                <span className={`font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}> {itemName || "này"}</span>? Hành động này không thể hoàn tác.
               </p>
               
               <div className="flex flex-col gap-3">
@@ -51,7 +68,11 @@ export default function ModalXoa({ isOpen, onClose, onConfirm, itemName, isLoadi
                 <button 
                   onClick={onClose}
                   disabled={isLoading}
-                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-black py-4 rounded-2xl active:scale-95 transition-all disabled:opacity-60"
+                  className={`w-full font-black py-4 rounded-2xl active:scale-95 transition-all disabled:opacity-60 ${
+                    isDarkMode 
+                      ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' 
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
                 >
                   Hủy bỏ
                 </button>

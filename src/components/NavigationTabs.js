@@ -1,6 +1,7 @@
 "use client";
 
-export default function NavigationTabs({ activeTab, setActiveTab }) {
+// BỔ SUNG isDarkMode VÀO PROPS
+export default function NavigationTabs({ activeTab, setActiveTab, isDarkMode }) {
   const tabs = [
     { id: "dat-lich", label: "Đặt lịch" },
     { id: "xem-lich", label: "Xem lịch" },
@@ -13,7 +14,6 @@ export default function NavigationTabs({ activeTab, setActiveTab }) {
         </svg>
       ) 
     },
-    // 👇 THÊM TAB TÌM KIẾM Ở ĐÂY 👇
     { 
       id: "tim-kiem", 
       label: "", 
@@ -40,16 +40,16 @@ export default function NavigationTabs({ activeTab, setActiveTab }) {
             /* 👇 Nếu là icon tab thì hẹp lại, nếu là tab chữ thì nở ra 👇 */
             ${isIconTab ? "flex-[0.34] min-w-[40px]" : "flex-1"}
             
-            /* 👇 LOGIC HIỂN THỊ TRẠNG THÁI 👇 */
+            /* 👇 LOGIC HIỂN THỊ TRẠNG THÁI (Đã thêm Dark Mode) 👇 */
             ${
               activeTab === tab.id
                 ? isIconTab
                   // Active cho các nút icon (Bo 4 góc, lơ lửng)
-                  ? "bg-white text-blue-600 border border-gray-200 rounded-[2rem] mb-2 z-20 shadow-sm" 
+                  ? (isDarkMode ? "bg-slate-800 text-blue-400 border border-slate-700 rounded-[2rem] mb-2 z-20 shadow-sm" : "bg-white text-blue-600 border border-gray-200 rounded-[2rem] mb-2 z-20 shadow-sm")
                   // Active cho các nút chữ (Bo 2 góc trên, dính liền khung)
-                  : "bg-white text-blue-600 border-t border-l border-r border-white border-b-transparent rounded-t-[1.5rem] z-20" 
-                // Không Active (Màu xanh, chìm xuống)
-                : "bg-blue-600 text-white border-none rounded-3xl mb-2 z-0 opacity-70"
+                  : (isDarkMode ? "bg-slate-800 text-blue-400 border-t border-l border-r border-slate-800 border-b-transparent rounded-t-[1.5rem] z-20" : "bg-white text-blue-600 border-t border-l border-r border-white border-b-transparent rounded-t-[1.5rem] z-20")
+                // Không Active (Chìm xuống phía sau)
+                : (isDarkMode ? "bg-slate-700 text-slate-300 border-none rounded-3xl mb-2 z-0 opacity-60 hover:opacity-100" : "bg-blue-600 text-white border-none rounded-3xl mb-2 z-0 opacity-70 hover:opacity-100")
             }`}
             style={{ outline: 'none' }}
           >

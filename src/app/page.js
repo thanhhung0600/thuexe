@@ -16,37 +16,43 @@ export default function Home() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // State quản lý việc đóng/mở menu cài đặt
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  // 1. State Chế độ xem mặc định (Ngày/Tuần)
   const [defaultView, setDefaultView] = useState("day");
 
-  // 2. State quản lý 3 khung giờ thông báo cố định
   const [notis, setNotis] = useState([
     { id: 1, label: "Sáng (07:00)", enabled: false },
     { id: 2, label: "Trưa (11:00)", enabled: false },
     { id: 3, label: "Tối (19:00)", enabled: false },
   ]);
 
-  // Kiểm tra lựa chọn đã lưu khi vừa mở App
+  // --- 3 STATE CHO TÍNH NĂNG MỚI ---
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [hidePastTrips, setHidePastTrips] = useState(false);
+  const [preTripReminder, setPreTripReminder] = useState("none"); // "none", "15m", "30m", "1h"
+  // -----------------------------------------
+
   useEffect(() => {
-    // Load chế độ xem (Ngày/Tuần)
     const savedView = localStorage.getItem("defaultViewMode") || "day";
     setDefaultView(savedView);
 
-    // Load trạng thái bật/tắt thông báo
     const savedNotis = localStorage.getItem("notiSettings");
-    if (savedNotis) {
-      setNotis(JSON.parse(savedNotis));
-    }
+    if (savedNotis) setNotis(JSON.parse(savedNotis));
+
+    // Đọc cài đặt mới từ localStorage
+    const savedDarkMode = localStorage.getItem("darkMode") === "true";
+    setIsDarkMode(savedDarkMode);
+    
+    const savedHidePast = localStorage.getItem("hidePastTrips") === "true";
+    setHidePastTrips(savedHidePast);
+    
+    const savedPreTrip = localStorage.getItem("preTripReminder") || "none";
+    setPreTripReminder(savedPreTrip);
   }, []);
 
-  // --- ĐOẠN MỚI: Tự động kiểm tra và gia hạn Token chạy ngầm ---
   useEffect(() => {
     const autoFetchToken = async () => {
       if (typeof window !== "undefined" && "Notification" in window) {
-        // Nếu người dùng ĐÃ TỪNG cho phép (granted) thì tự động lấy token ngầm
         if (Notification.permission === "granted") {
           try {
             const token = await requestForToken();
@@ -65,7 +71,6 @@ export default function Home() {
     };
     autoFetchToken();
   }, []);
-  // -------------------------------------------------------------
 
   const addToast = (message, type = "error") => {
     const id = Date.now();
@@ -85,8 +90,35 @@ export default function Home() {
     const newNotis = notis.map(n => n.id === id ? { ...n, enabled: !n.enabled } : n);
     setNotis(newNotis);
     localStorage.setItem("notiSettings", JSON.stringify(newNotis));
-    addToast(`Đã ${newNotis.find(n => n.id === id).enabled ? 'bật' : 'tắt'} thông báo khung giờ này`, "success");
+    
+    // Tìm khung giờ vừa được bấm để hiển thị thông báo
+    const toggledNoti = newNotis.find(n => n.id === id);
+    const sessionName = toggledNoti.label.split(" ")[0]; // Lấy chữ "Sáng", "Trưa", "Tối"
+    addToast(`Đã ${toggledNoti.enabled ? 'bật' : 'tắt'} thông báo buổi ${sessionName}`, "success");
   };
+
+  // --- HÀM XỬ LÝ 3 TÍNH NĂNG MỚI ---
+  const toggleDarkMode = () => {
+    const newVal = !isDarkMode;
+    setIsDarkMode(newVal);
+    localStorage.setItem("darkMode", newVal);
+    addToast(`Đã ${newVal ? 'bật' : 'tắt'} Giao diện tối`, "success");
+  };
+
+  const toggleHidePastTrips = () => {
+    const newVal = !hidePastTrips;
+    setHidePastTrips(newVal);
+    localStorage.setItem("hidePastTrips", newVal);
+    addToast(`Đã ${newVal ? 'ẩn' : 'hiện'} các chuyến đi cũ`, "success");
+  };
+
+  const handleSavePreTrip = (val) => {
+    setPreTripReminder(val);
+    localStorage.setItem("preTripReminder", val);
+    const labels = { "none": "Tắt", "15m": "15 phút", "30m": "30 phút", "1h": "1 tiếng" };
+    addToast(`Nhắc trước giờ chạy: ${labels[val]}`, "success");
+  };
+  // ---------------------------------
 
   const [formData, setFormData] = useState({
     tenKhach: "", sdt: "", loaiXe: "", taiXe: "",
@@ -149,13 +181,11 @@ export default function Home() {
     }
   };
 
-  // --- ĐOẠN ĐÃ SỬA: Hàm kích hoạt và lưu token bằng nút bấm ---
   const handleEnableNotification = async () => {
     try {
       addToast("Đang kết nối để xin quyền...", "success"); 
       const token = await requestForToken();
       if (token) {
-        // Gửi token thu được lên API để lưu vào Google Sheets
         await fetch('/api/luu-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -169,24 +199,23 @@ export default function Home() {
       addToast(`Lỗi: ${error.message}`, "error"); 
     }
   };
-  // -----------------------------------------------------------
 
   return (
-    <main className="min-h-[100dvh] w-full bg-[#bac4e5] flex items-center justify-center p-4 font-sans relative overflow-hidden flex-col">
+    <main className={`min-h-[100dvh] w-full flex items-center justify-center p-4 font-sans relative overflow-hidden flex-col transition-colors duration-500 ${isDarkMode ? 'bg-slate-900' : 'bg-[#bac4e5]'}`}>
       <ToastContainer toasts={toasts} />
 
       <div className="w-full max-w-md relative">
         <div className="relative z-10 -mb-[1px]">
-          <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+          <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} isDarkMode={isDarkMode} />
         </div>
 
-        <div className="bg-white shadow-2xl p-6 sm:p-8 border border-white rounded-[1.5rem] relative z-0 transition-all duration-500 overflow-hidden pb-12">
+        <div className={`shadow-2xl p-6 sm:p-8 border rounded-[1.5rem] relative z-0 transition-all duration-500 overflow-hidden pb-12 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-white'}`}>
           {activeTab === "dat-lich" && (
-            <DatLich formData={formData} handleChange={handleChange} handleSubmit={handleSubmit} errors={errors} isSubmitting={isSubmitting} />
+            <DatLich isDarkMode={isDarkMode} formData={formData} handleChange={handleChange} handleSubmit={handleSubmit} errors={errors} isSubmitting={isSubmitting} />
           )}
-          {activeTab === "xem-lich" && <XemLich />}
-          {activeTab === "thong-ke" && <ThongKe />}
-          {activeTab === "tim-kiem" && <TimKiem />}
+          {activeTab === "xem-lich" && <XemLich hidePastTrips={hidePastTrips} isDarkMode={isDarkMode} />}
+          {activeTab === "thong-ke" && <ThongKe isDarkMode={isDarkMode} />}
+          {activeTab === "tim-kiem" && <TimKiem isDarkMode={isDarkMode}/>}
         </div>
       </div>
 
@@ -206,13 +235,14 @@ export default function Home() {
       ></div>
 
       <div 
-        className={`fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-white rounded-t-3xl shadow-2xl z-[70] transform transition-transform duration-300 ${isSettingsOpen ? 'translate-y-0' : 'translate-y-full'}`}
+        className={`fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-white rounded-t-3xl shadow-2xl z-[70] transform transition-transform duration-300 flex flex-col ${isSettingsOpen ? 'translate-y-0' : 'translate-y-full'}`}
+        style={{ maxHeight: '85vh' }}
       >
-        <div className="w-full flex justify-center pt-3 pb-1 cursor-pointer" onClick={() => setIsSettingsOpen(false)}>
+        <div className="w-full flex justify-center pt-3 pb-1 cursor-pointer shrink-0" onClick={() => setIsSettingsOpen(false)}>
           <div className="w-12 h-1.5 bg-slate-200 rounded-full"></div>
         </div>
 
-        <div className="p-6 pt-2">
+        <div className="p-6 pt-2 overflow-y-auto no-scrollbar flex-1">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-black text-slate-800">Cài đặt</h2>
             <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
@@ -221,6 +251,8 @@ export default function Home() {
           </div>
 
           <div className="space-y-4 mb-6">
+            
+            {/* NHÓM 1: THÔNG BÁO & NHẮC NHỞ */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
@@ -229,18 +261,63 @@ export default function Home() {
                 <span className="font-bold text-slate-700">Thông báo nhắc lịch</span>
               </div>
               
-              <div className="space-y-3">
-                {notis.map((noti) => (
-                  <div key={noti.id} className="flex items-center justify-between bg-white p-3 px-4 rounded-xl border border-slate-200/60 shadow-sm">
-                    <span className="font-bold text-slate-600 text-sm">{noti.label}</span>
-                    <button 
+              {/* --- ĐÃ SỬA: KIỂU HIỂN THỊ DỌC (3 Ô VUÔNG) CHO GIỜ CỐ ĐỊNH --- */}
+              <div className="grid grid-cols-3 gap-2">
+                {notis.map((noti) => {
+                  const timeParts = noti.label.split(" ");
+                  const session = timeParts[0]; 
+                  const time = timeParts[1]; 
+
+                  return (
+                    <div 
+                      key={noti.id} 
                       onClick={() => toggleNoti(noti.id)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${noti.enabled ? 'bg-blue-500' : 'bg-slate-300'}`}
+                      className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-[1rem] border transition-all cursor-pointer shadow-sm active:scale-95 ${
+                        noti.enabled 
+                          ? 'bg-blue-50/80 border-blue-200' 
+                          : 'bg-white border-slate-200/60'
+                      }`}
                     >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${noti.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                      <button 
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors mb-2.5 pointer-events-none ${
+                          noti.enabled ? 'bg-blue-500' : 'bg-slate-200'
+                        }`}
+                      >
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${
+                          noti.enabled ? 'translate-x-4.5 ml-[2px]' : 'translate-x-1'
+                        }`} />
+                      </button>
+
+                      <span className={`font-black text-[12px] tracking-wide ${
+                        noti.enabled ? 'text-blue-700' : 'text-slate-600'
+                      }`}>
+                        {session}
+                      </span>
+                      <span className={`text-[10px] font-bold mt-0.5 ${
+                        noti.enabled ? 'text-blue-500' : 'text-slate-400'
+                      }`}>
+                        {time}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* ----------------------------------------------------------- */}
+
+              {/* TÍNH NĂNG 3: NHẮC TRƯỚC GIỜ CHẠY */}
+              <div className="mt-4 pt-4 border-t border-slate-200/60">
+                <span className="font-bold text-slate-500 text-[11px] uppercase tracking-widest block mb-3 pl-1">Nhắc sát giờ chạy</span>
+                <div className="flex bg-white p-1 rounded-xl border border-slate-200/60 gap-1 shadow-sm">
+                  {["none", "15m", "30m", "1h"].map(val => (
+                    <button
+                      key={val}
+                      onClick={() => handleSavePreTrip(val)}
+                      className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${preTripReminder === val ? 'bg-blue-500 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+                    >
+                      {val === "none" ? "Tắt" : val === "15m" ? "15P" : val === "30m" ? "30P" : "1H"}
                     </button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
               
               <button 
@@ -251,27 +328,51 @@ export default function Home() {
               </button>
             </div>
 
+            {/* NHÓM 2: HIỂN THỊ & GIAO DIỆN */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="bg-purple-100 p-2 rounded-lg text-purple-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                 </div>
-                <span className="font-bold text-slate-700">Chế độ xem mặc định</span>
+                <span className="font-bold text-slate-700">Hiển thị & Giao diện</span>
               </div>
-              <div className="flex bg-white p-1 rounded-xl border border-slate-200 gap-1">
-                <button 
-                  onClick={() => handleSaveDefaultView("day")}
-                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${defaultView === 'day' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
-                >
-                  Theo Ngày
-                </button>
-                <button 
-                  onClick={() => handleSaveDefaultView("week")}
-                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${defaultView === 'week' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
-                >
-                  Theo Tuần
-                </button>
+              
+              <div className="space-y-3 mb-4">
+                {/* TÍNH NĂNG 2: ẨN CHUYẾN ĐI CŨ */}
+                <div className="flex items-center justify-between bg-white p-3 px-4 rounded-xl border border-slate-200/60 shadow-sm">
+                  <span className="font-bold text-slate-600 text-sm">Ẩn chuyến đi cũ</span>
+                  <button onClick={toggleHidePastTrips} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${hidePastTrips ? 'bg-purple-500' : 'bg-slate-300'}`}>
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${hidePastTrips ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+
+                {/* TÍNH NĂNG 1: DARK MODE */}
+                <div className="flex items-center justify-between bg-white p-3 px-4 rounded-xl border border-slate-200/60 shadow-sm">
+                  <span className="font-bold text-slate-600 text-sm">Giao diện tối (Nền)</span>
+                  <button onClick={toggleDarkMode} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isDarkMode ? 'bg-slate-800' : 'bg-slate-300'}`}>
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isDarkMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
               </div>
+
+              <div className="pt-3 border-t border-slate-200/60">
+                <span className="font-bold text-slate-500 text-[11px] uppercase tracking-widest block mb-2 pl-1">Chế độ xem mặc định</span>
+                <div className="flex bg-white p-1 rounded-xl border border-slate-200/60 gap-1 shadow-sm">
+                  <button 
+                    onClick={() => handleSaveDefaultView("day")}
+                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${defaultView === 'day' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+                  >
+                    Theo Ngày
+                  </button>
+                  <button 
+                    onClick={() => handleSaveDefaultView("week")}
+                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${defaultView === 'week' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}
+                  >
+                    Theo Tuần
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
           
@@ -282,6 +383,8 @@ export default function Home() {
       <style jsx global>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </main>
   );
