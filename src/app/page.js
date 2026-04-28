@@ -29,6 +29,7 @@ export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hidePastTrips, setHidePastTrips] = useState(false);
   const [preTripReminder, setPreTripReminder] = useState("none");
+  const [hidePrice, setHidePrice] = useState(false); // TÍNH NĂNG 3: ẨN GIÁ TIỀN
 
   // --- HÀM ĐỒNG BỘ TOKEN VÀ CÀI ĐẶT GIỜ LÊN SERVER ---
   const syncTokenWithPrefs = async (currentToken, currentNotis) => {
@@ -60,6 +61,9 @@ export default function Home() {
     
     const savedHidePast = localStorage.getItem("hidePastTrips") === "true";
     setHidePastTrips(savedHidePast);
+
+    const savedHidePrice = localStorage.getItem("hidePrice") === "true";
+    setHidePrice(savedHidePrice);
     
     const savedPreTrip = localStorage.getItem("preTripReminder") || "none";
     setPreTripReminder(savedPreTrip);
@@ -106,7 +110,7 @@ export default function Home() {
     const sessionName = toggledNoti.label.split(" ")[0]; 
     addToast(`Đã ${toggledNoti.enabled ? 'bật' : 'tắt'} thông báo buổi ${sessionName}`, "success");
 
-    // Nếu đã có quyền, đồng bộ ngay lập tức lên Google Sheets
+    // Nếu đã có quyền, đồng bộ ngay lập tức cấu hình mới lên Google Sheets
     if (typeof window !== "undefined" && Notification.permission === "granted") {
       const token = await requestForToken();
       await syncTokenWithPrefs(token, newNotis);
@@ -125,6 +129,13 @@ export default function Home() {
     setHidePastTrips(newVal);
     localStorage.setItem("hidePastTrips", newVal);
     addToast(`Đã ${newVal ? 'ẩn' : 'hiện'} các chuyến đi cũ`, "success");
+  };
+
+  const toggleHidePrice = () => {
+    const newVal = !hidePrice;
+    setHidePrice(newVal);
+    localStorage.setItem("hidePrice", newVal);
+    addToast(`Đã ${newVal ? 'ẩn' : 'hiện'} giá tiền`, "success");
   };
 
   const handleSavePreTrip = (val) => {
@@ -222,7 +233,9 @@ export default function Home() {
           {activeTab === "dat-lich" && (
             <DatLich isDarkMode={isDarkMode} formData={formData} handleChange={handleChange} handleSubmit={handleSubmit} errors={errors} isSubmitting={isSubmitting} />
           )}
-          {activeTab === "xem-lich" && <XemLich hidePastTrips={hidePastTrips} isDarkMode={isDarkMode} />}
+          {activeTab === "xem-lich" && (
+            <XemLich hidePastTrips={hidePastTrips} isDarkMode={isDarkMode} hidePrice={hidePrice} />
+          )}
           {activeTab === "thong-ke" && <ThongKe isDarkMode={isDarkMode} />}
           {activeTab === "tim-kiem" && <TimKiem isDarkMode={isDarkMode}/>}
         </div>
@@ -284,8 +297,8 @@ export default function Home() {
                       <button className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors mb-2.5 pointer-events-none ${noti.enabled ? 'bg-blue-500' : 'bg-slate-300'}`}>
                         <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${noti.enabled ? 'translate-x-4.5 ml-[2px]' : 'translate-x-1'}`} />
                       </button>
-                      <span className={`font-black text-[12px] tracking-wide ${noti.enabled ? 'text-blue-500' : 'text-slate-400'}`}>{timeParts[0]}</span>
-                      <span className={`text-[10px] font-bold mt-0.5 ${noti.enabled ? 'text-blue-400/80' : 'text-slate-500'}`}>{timeParts[1]}</span>
+                      <span className={`font-black text-[12px] tracking-wide ${noti.enabled ? (isDarkMode ? 'text-blue-400' : 'text-blue-700') : 'text-slate-400'}`}>{timeParts[0]}</span>
+                      <span className={`text-[10px] font-bold mt-0.5 ${noti.enabled ? (isDarkMode ? 'text-blue-300' : 'text-blue-500') : 'text-slate-500'}`}>{timeParts[1]}</span>
                     </div>
                   );
                 })}
@@ -317,7 +330,7 @@ export default function Home() {
             <div className={`p-4 rounded-2xl border transition-colors ${isDarkMode ? 'bg-slate-900/40 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
               <div className="flex items-center gap-3 mb-4">
                 <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-600'}`}>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                 </div>
                 <span className={`font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>Hiển thị & Giao diện</span>
               </div>
@@ -327,6 +340,14 @@ export default function Home() {
                   <span className={`font-bold text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>Ẩn chuyến đi cũ</span>
                   <button onClick={toggleHidePastTrips} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${hidePastTrips ? 'bg-purple-500' : 'bg-slate-300'}`}>
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${hidePastTrips ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+
+                {/* TÍNH NĂNG 3: ẨN GIÁ TIỀN */}
+                <div className={`flex items-center justify-between p-3 px-4 rounded-xl border shadow-sm ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200/60'}`}>
+                  <span className={`font-bold text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>Ẩn giá tiền (Bảo mật)</span>
+                  <button onClick={toggleHidePrice} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${hidePrice ? 'bg-orange-500' : 'bg-slate-300'}`}>
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${hidePrice ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
                 </div>
 
@@ -347,7 +368,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div className="text-center pb-4 text-[10px] text-slate-500 uppercase tracking-widest">Phiên bản 2.0.2</div>
+          <div className="text-center pb-4 text-[10px] text-slate-500 uppercase tracking-widest">Phiên bản 2.0.3</div>
         </div>
       </div>
 

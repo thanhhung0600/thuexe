@@ -3,13 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// ĐÃ BỔ SUNG isDarkMode
-export default function LichTrinhChiTiet({ data, showDate = false, onRefresh, isDarkMode }) {
-    // Quản lý bảng Tùy chọn (Menu 3 chấm)
+// ĐÃ BỔ SUNG hidePrice VÀO PROPS
+export default function LichTrinhChiTiet({ data, showDate = false, onRefresh, isDarkMode, hidePrice }) {
     const [selectedMenuIndex, setSelectedMenuIndex] = useState(null);
-    // Quản lý bảng Xác nhận xóa
     const [confirmingIndex, setConfirmingIndex] = useState(null);
-    // Quản lý bảng Sửa thông tin
     const [editingIndex, setEditingIndex] = useState(null);
     
     const [editForm, setEditForm] = useState({
@@ -92,7 +89,6 @@ export default function LichTrinhChiTiet({ data, showDate = false, onRefresh, is
         }
     };
 
-    // Class tái sử dụng cho các ô nhập liệu trong Bảng Sửa để tự đổi màu
     const inputClass = `w-full rounded-2xl px-4 py-3 text-[14px] font-bold outline-none transition-all ${
         isDarkMode 
             ? 'bg-slate-900/50 border border-slate-700 text-white focus:bg-slate-700 focus:border-blue-500 placeholder:text-slate-500' 
@@ -108,13 +104,17 @@ export default function LichTrinhChiTiet({ data, showDate = false, onRefresh, is
 
     return (
         <div className="flex flex-col gap-2.5 p-1 relative">
-            {/* RENDER DANH SÁCH THẺ (Màu sắc giữ nguyên vì là thẻ màu) */}
             {data.map((item, index) => (
                 <div key={item.rowId || index} className={`${defaultColors[index % 4]} rounded-xl p-3 relative shadow-md overflow-hidden min-h-[95px] flex flex-col justify-center`}>
                     <div className="w-full">
                         <div className="absolute top-3 right-3 bottom-3 flex flex-col items-end justify-between z-20">
                             <div className="flex items-center gap-2">
-                                {item.gia && <div className="bg-white/30 px-2 py-0.5 rounded text-[10px] font-bold text-slate-800">{item.gia}</div>}
+                                {/* TÍNH NĂNG 3: ẨN GIÁ TIỀN NẾU hidePrice BẰNG TRUE */}
+                                {item.gia && !hidePrice && (
+                                    <div className="bg-white/30 px-2 py-0.5 rounded text-[10px] font-bold text-slate-800 animate-fade-in">
+                                        {item.gia}
+                                    </div>
+                                )}
                                 <div className="bg-black/10 backdrop-blur-md px-2 py-0.5 rounded border border-black/5 text-white text-[12px] font-bold">
                                     {showDate && <span className="text-[9px] block opacity-70">{formatDateShort(item.ngày || item.date)}</span>}
                                     {formatTime(item.time || item.gio)}

@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useGesture } from "@use-gesture/react"; 
 import LichTrinhChiTiet from "./LichTrinhChiTiet";
 
-// ĐÃ THÊM 2 PROPS TỪ BẢNG CÀI ĐẶT: hidePastTrips, isDarkMode
-export default function XemLich({ hidePastTrips, isDarkMode }) {
+// ĐÃ THÊM PROP: hidePrice
+export default function XemLich({ hidePastTrips, isDarkMode, hidePrice }) {
   const [currentWeekAnchor, setCurrentWeekAnchor] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [allRentals, setAllRentals] = useState([]);
@@ -361,7 +361,7 @@ export default function XemLich({ hidePastTrips, isDarkMode }) {
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               >
                 {viewMode === "day" && (
-                  <LichTrinhChiTiet data={dayData} onRefresh={fetchData} isDarkMode={isDarkMode} />
+                  <LichTrinhChiTiet data={dayData} onRefresh={fetchData} isDarkMode={isDarkMode} hidePrice={hidePrice} />
                 )}
 
                 {viewMode === "week" && (
@@ -395,7 +395,7 @@ export default function XemLich({ hidePastTrips, isDarkMode }) {
                             </div>
 
                             <div className="px-0 z-20">
-                              <LichTrinhChiTiet data={group.rentals} onRefresh={fetchData} isDarkMode={isDarkMode} />
+                              <LichTrinhChiTiet data={group.rentals} onRefresh={fetchData} isDarkMode={isDarkMode} hidePrice={hidePrice} />
                             </div>
                           </div>
                         );
