@@ -42,6 +42,31 @@ export default function Home() {
     }
   }, []);
 
+  // --- ĐOẠN MỚI: Tự động kiểm tra và gia hạn Token chạy ngầm ---
+  useEffect(() => {
+    const autoFetchToken = async () => {
+      if (typeof window !== "undefined" && "Notification" in window) {
+        // Nếu người dùng ĐÃ TỪNG cho phép (granted) thì tự động lấy token ngầm
+        if (Notification.permission === "granted") {
+          try {
+            const token = await requestForToken();
+            if (token) {
+              await fetch('/api/luu-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+              });
+            }
+          } catch (error) {
+            console.error("Lỗi tự động lấy token ngầm:", error);
+          }
+        }
+      }
+    };
+    autoFetchToken();
+  }, []);
+  // -------------------------------------------------------------
+
   const addToast = (message, type = "error") => {
     const id = Date.now();
     setToasts((prev) => [{ id, message, type }, ...prev].slice(0, 3));
@@ -56,7 +81,6 @@ export default function Home() {
     addToast(`Đã lưu mặc định: Xem theo ${mode === 'day' ? 'Ngày' : 'Tuần'}`, "success");
   };
 
-  // Hàm bật/tắt thông báo từng giờ
   const toggleNoti = (id) => {
     const newNotis = notis.map(n => n.id === id ? { ...n, enabled: !n.enabled } : n);
     setNotis(newNotis);
@@ -125,12 +149,19 @@ export default function Home() {
     }
   };
 
+  // --- ĐOẠN ĐÃ SỬA: Hàm kích hoạt và lưu token bằng nút bấm ---
   const handleEnableNotification = async () => {
     try {
       addToast("Đang kết nối để xin quyền...", "success"); 
       const token = await requestForToken();
       if (token) {
-        prompt("Đã bật thông báo thành công! Đây là mã Token (Hãy copy nó):", token);
+        // Gửi token thu được lên API để lưu vào Google Sheets
+        await fetch('/api/luu-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        addToast("Đã bật thông báo thành công!", "success");
       } else {
         addToast("Từ chối nhận thông báo hoặc không hỗ trợ.", "error");
       }
@@ -138,6 +169,7 @@ export default function Home() {
       addToast(`Lỗi: ${error.message}`, "error"); 
     }
   };
+  // -----------------------------------------------------------
 
   return (
     <main className="min-h-[100dvh] w-full bg-[#bac4e5] flex items-center justify-center p-4 font-sans relative overflow-hidden flex-col">
@@ -158,7 +190,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- NÚT BÁNH RĂNG --- */}
       <button
         onClick={() => setIsSettingsOpen(true)}
         className="fixed bottom-4 right-4 z-40 p-2.5 bg-white/40 backdrop-blur-md border border-white/50 shadow-sm rounded-full text-slate-600 opacity-50 hover:opacity-100 hover:bg-white/70 active:scale-95 transition-all duration-300"
@@ -169,7 +200,6 @@ export default function Home() {
         </svg>
       </button>
 
-      {/* --- MENU TRƯỢT (BOTTOM SHEET) --- */}
       <div 
         className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isSettingsOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsSettingsOpen(false)}
@@ -191,7 +221,6 @@ export default function Home() {
           </div>
 
           <div className="space-y-4 mb-6">
-            {/* 1. Bật/Tắt Thông báo theo giờ cố định */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
@@ -218,11 +247,10 @@ export default function Home() {
                 onClick={() => { handleEnableNotification(); setIsSettingsOpen(false); }}
                 className="w-full mt-4 bg-slate-800 text-white py-3 rounded-xl font-bold text-[11px] uppercase tracking-widest shadow-md active:scale-95 transition-all"
               >
-                Kích hoạt / Lấy Token
+                Kích hoạt hệ thống thông báo
               </button>
             </div>
 
-            {/* 2. Chế độ xem mặc định */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div className="flex items-center gap-3 mb-3">
                 <div className="bg-purple-100 p-2 rounded-lg text-purple-600">

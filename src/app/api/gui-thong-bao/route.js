@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'; // 🔴 DÒNG PHÉP THUẬT: Ép Vercel luôn chạy mới 100%, không bị nhớ ngày cũ
+export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { google } from "googleapis";
@@ -57,10 +57,13 @@ export async function GET(request) {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
         private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       },
-      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+      // Chú ý: Cần quyền này để có thể đọc/ghi các sheet
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
 
     const sheets = google.sheets({ version: "v4", auth });
+    
+    // --- LẤY DỮ LIỆU LỊCH TRÌNH ---
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: "DATA!A2:G", 
@@ -91,22 +94,33 @@ export async function GET(request) {
       notificationBody += `... và ${tomorrowTrips.length - 3} chuyến khác.`;
     }
 
-    // 6. GỬI LÊN FIREBASE CHO 1 MÁY DUY NHẤT
+    // --- ĐOẠN ĐÃ SỬA: ĐỌC DANH SÁCH TOKEN VÀ GỬI MULTICAST ---
+    const tokenResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: "TOKENS!A:A", 
+    });
+
+    const tokenRows = tokenResponse.data.values || [];
+    const tokens = tokenRows.map(row => row[0]).filter(token => token && token.trim() !== "");
+
+    if (tokens.length === 0) {
+      return NextResponse.json({ success: false, error: "Không có thiết bị nào đăng ký nhận thông báo." });
+    }
+
     const message = {
       notification: {
         title: `Lịch trình ngày mai (${tomorrowStr}) 🗓️`,
         body: notificationBody,
       },
-      // ⚠️ QUAN TRỌNG: Dán lại mã Token siêu dài của bạn vào đây
-      token: "cE9II06GPziuToeur5y8lG:APA91bG7pmjX9XLFM4lVUR70eqfwsxg7qcuJaGQvuHjW3wvGLc_iF6OutELX4F8KAxydcSAklz3sbXvZhWmnkzvbmMQNEZ651yy4Q9sA529Ref-q1eAP4sg", 
+      tokens: tokens, // Gửi cho toàn bộ mảng token này
     };
 
-    const fbResponse = await admin.messaging().send(message);
+    const fbResponse = await admin.messaging().sendEachForMulticast(message);
 
     return NextResponse.json({ 
       success: true, 
-      message: `Đã gửi thông báo thành công cho ngày ${tomorrowStr}!`, 
-      firebaseId: fbResponse 
+      message: `Đã gửi thông báo thành công cho ${fbResponse.successCount} thiết bị!`, 
+      details: fbResponse 
     });
 
   } catch (error) {
